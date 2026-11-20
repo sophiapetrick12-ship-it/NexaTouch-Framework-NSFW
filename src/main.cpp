@@ -3,6 +3,7 @@
 #include "Config.h"
 #include "InteractionController.h"
 #include "SkeletonProbe.h"
+#include "SettingsMenu.h"
 
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
@@ -81,10 +82,12 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse)
         config.verboseLogging);
 
     if (config.enableInteractions) {
-        NexaTouch::InstallInteractionInput();
+        NexaTouch::InstallInteractionInput(config, configPath);
     } else {
         spdlog::info("Interactions are disabled in the INI; input handler was not registered.");
     }
+
+    NexaTouch::RegisterSettingsMenu(config, configPath);
 
     spdlog::info("NexaTouch stage 0.2/0.3 initialized. G target acquisition and safe-handle session control are enabled.");
     spdlog::info("Humanoid skeleton probe supports core and extended touch-node checks; this is a capability probe, not proof of XPMSSE file provenance.");
