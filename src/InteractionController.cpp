@@ -30,10 +30,15 @@ namespace
         switch (a_choice) {
         case 0:
             g_config->enableInteractions = !g_config->enableInteractions;
+            if (!g_config->enableInteractions) {
+                g_interactionActive = false;
+                g_target.reset();
+            }
             spdlog::info("F1 menu: G target selection set to {}.", g_config->enableInteractions);
             break;
         case 1:
             g_config->verboseLogging = !g_config->verboseLogging;
+            spdlog::set_level(g_config->verboseLogging ? spdlog::level::debug : spdlog::level::info);
             spdlog::info("F1 menu: verbose logging set to {}.", g_config->verboseLogging);
             break;
         default:
@@ -100,6 +105,9 @@ namespace
                 }
 
                 const auto key = button->GetIDCode();
+                if (g_config && g_config->verboseLogging) {
+                    spdlog::debug("NexaTouch keyboard input received: scanCode={}.", key);
+                }
                 if (key == kF1ScanCode) {
                     OpenSettingsMenu();
                     break;
