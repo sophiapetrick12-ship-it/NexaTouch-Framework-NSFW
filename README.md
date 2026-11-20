@@ -9,7 +9,7 @@ An independent Skyrim Special Edition SKSE plugin project focused on safe, confi
 - Build environment: GitHub Actions (Windows + MSVC)
 
 ## Current status
-The SKSE foundation loads successfully in-game on the user's Skyrim SE 1.5.97 setup. The current development build verifies the exact runtime, creates/reads its INI configuration, and logs the active settings. It does not yet contain working hand animations, NPC manipulation, an in-game F1 menu, or finished interaction features.
+The SKSE foundation loads successfully in-game on the user's Skyrim SE 1.5.97 setup. The current development stage adds a real G-key input listener, crosshair target acquisition, actor/alive/combat/range checks, and a safe-handle interaction session toggle. It also includes a humanoid skeleton capability probe for core hand/head nodes and extended touch nodes. It does not yet move or freeze actors, draw a mouse-zone selector, perform touch animations, display the player hand, or provide reactions/audio. The skeleton capability probe does not by itself prove that the loaded NIF originated from XPMSSE.
 
 ## Required interaction scope
 - Humanoid NPC interactions and Awww-style animal interactions are both mandatory parts of the project scope.

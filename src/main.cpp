@@ -1,6 +1,8 @@
 #include <SKSE/SKSE.h>
 
 #include "Config.h"
+#include "InteractionController.h"
+#include "SkeletonProbe.h"
 
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
@@ -79,9 +81,13 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse)
         config.verboseLogging);
 
     if (config.enableInteractions) {
-        spdlog::warn("EnableInteractions is set, but interaction execution is not implemented yet; no actor control will be performed.");
+        NexaTouch::InstallInteractionInput();
+    } else {
+        spdlog::info("Interactions are disabled in the INI; input handler was not registered.");
     }
 
-    spdlog::info("NexaTouch foundation initialized. No actor, skeleton, animation, or camera data has been modified.");
+    spdlog::info("NexaTouch stage 0.2/0.3 initialized. G target acquisition and safe-handle session control are enabled.");
+    spdlog::info("Humanoid skeleton probe supports core and extended touch-node checks; this is a capability probe, not proof of XPMSSE file provenance.");
+    spdlog::info("No actor transforms, skeleton nodes, animation graphs, physics, or camera data are modified.");
     return true;
 }

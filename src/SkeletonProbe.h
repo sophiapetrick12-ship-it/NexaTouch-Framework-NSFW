@@ -1,0 +1,23 @@
+#pragma once
+
+#include <RE/Skyrim.h>
+
+namespace NexaTouch
+{
+    struct HumanoidSkeletonProfile
+    {
+        bool hasRoot{ false };
+        bool hasHead{ false };
+        bool hasLeftHand{ false };
+        bool hasRightHand{ false };
+        bool hasLeftBreast{ false };
+        bool hasRightBreast{ false };
+        bool hasBelly{ false };
+        bool hasButt{ false };
+
+        [[nodiscard]] bool HasCoreNodes() const noexcept;
+        [[nodiscard]] bool HasExtendedTouchNodes() const noexcept;
+    };
+
+    [[nodiscard]] HumanoidSkeletonProfile InspectHumanoidSkeleton(RE::Actor& a_actor);
+}
