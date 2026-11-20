@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <cstdint>
 
 namespace NexaTouch
 {
@@ -12,7 +13,9 @@ namespace NexaTouch
         bool enableAudioReactions{ true };
         bool requireXPMSSE{ true };
         bool verboseLogging{ false };
+        std::uint32_t interactionKeyScanCode{ 0x22 };
     };
 
     [[nodiscard]] Config LoadConfig(const std::filesystem::path& a_path);
+    [[nodiscard]] bool SaveConfig(const Config& a_config, const std::filesystem::path& a_path);
 }
