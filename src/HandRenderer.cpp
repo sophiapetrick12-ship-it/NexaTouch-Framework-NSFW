@@ -18,7 +18,7 @@ namespace
         bool operator()(RE::NiAVObject* a_object) override
         {
             if (!a_object) return true;
-            auto* geometry = a_object->AsNiGeometry();
+            auto* geometry = a_object->AsGeometry();
             if (!geometry) return true;
 
             const char* rawName = geometry->name.c_str();
@@ -78,6 +78,7 @@ namespace NexaTouch
         auto* clonedRoot = clonedObject ? static_cast<RE::NiAVObject*>(clonedObject) : nullptr;
         if (!clonedRoot || !clonedRoot->AsNode()) {
             spdlog::error("Pet Head hand clone failed: player scene graph could not be cloned as a node.");
+            if (clonedObject) clonedObject->DecRefCount();
             return false;
         }
 
