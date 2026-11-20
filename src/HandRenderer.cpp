@@ -5,41 +5,45 @@
 #include <algorithm>
 #include <cctype>
 #include <string>
-#include <string_view>
 
 namespace
 {
     RE::NiPointer<RE::NiAVObject> g_handClone;
     RE::NiPointer<RE::NiNode> g_handParent;
 
-    class HandGeometryFilter final : public RE::PerformOpFunc
+    struct HandGeometryFilter
     {
-    public:
-        bool operator()(RE::NiAVObject* a_object) override
-        {
-            if (!a_object) return true;
-            auto* geometry = a_object->AsGeometry();
-            if (!geometry) return true;
-
-            const char* rawName = geometry->name.c_str();
-            std::string name = rawName ? rawName : "";
-            std::transform(name.begin(), name.end(), name.begin(),
-                [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-
-            const bool isHandPart =
-                name.find("hand") != std::string::npos ||
-                name.find("wrist") != std::string::npos ||
-                name.find("forearm") != std::string::npos;
-
-            geometry->SetAppCulled(!isHandPart);
-            if (isHandPart) {
-                ++visibleHandGeometry;
-                spdlog::info("NexaTouch hand clone: retained player geometry '{}'.", rawName ? rawName : "<unnamed>");
-            }
-            return true;
-        }
-
         std::uint32_t visibleHandGeometry{ 0 };
+
+        void Visit(RE::NiAVObject* a_object)
+        {
+            if (!a_object) return;
+
+            if (auto* geometry = a_object->AsGeometry()) {
+                const char* rawName = geometry->name.c_str();
+                std::string name = rawName ? rawName : "";
+                std::transform(name.begin(), name.end(), name.begin(),
+                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+                const bool isHandPart =
+                    name.find("hand") != std::string::npos ||
+                    name.find("wrist") != std::string::npos ||
+                    name.find("forearm") != std::string::npos;
+
+                geometry->SetAppCulled(!isHandPart);
+                if (isHandPart) {
+                    ++visibleHandGeometry;
+                    spdlog::info("NexaTouch hand clone: retained player geometry '{}'.", rawName ? rawName : "<unnamed>");
+                }
+            }
+
+            if (auto* node = a_object->AsNode()) {
+                auto& children = node->GetChildren();
+                for (std::uint16_t i = 0; i < children.size(); ++i) {
+                    if (children[i]) Visit(children[i].get());
+                }
+            }
+        }
     };
 }
 
@@ -89,7 +93,7 @@ namespace NexaTouch
         }
 
         HandGeometryFilter filter;
-        clonedRoot->PerformOp(filter);
+        filter.Visit(clonedRoot.get());
         if (filter.visibleHandGeometry == 0) {
             spdlog::error("Pet Head hand clone aborted safely: no separately named hand/wrist/forearm geometry was found in the player's live 3D. No substitute mesh was shown.");
             return false;
