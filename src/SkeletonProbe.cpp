@@ -9,7 +9,7 @@ namespace NexaTouch
 
     bool HumanoidSkeletonProfile::HasExtendedTouchNodes() const noexcept
     {
-        return HasCoreNodes() && hasLeftBreast && hasRightBreast && hasBelly && hasButt;
+        return HasCoreNodes() && hasLeftBreast && hasRightBreast && hasBelly && HasAnyButtNode();
     }
 
     HumanoidSkeletonProfile InspectHumanoidSkeleton(RE::Actor& a_actor)
@@ -31,7 +31,9 @@ namespace NexaTouch
         profile.hasLeftBreast = hasNode("NPC L Breast");
         profile.hasRightBreast = hasNode("NPC R Breast");
         profile.hasBelly = hasNode("NPC Belly");
-        profile.hasButt = hasNode("NPC Butt");
+        profile.hasLeftButt = hasNode("NPC L Butt");
+        profile.hasRightButt = hasNode("NPC R Butt");
+        profile.hasLegacyButt = hasNode("NPC Butt");
         return profile;
     }
 }
