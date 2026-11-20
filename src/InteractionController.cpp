@@ -124,6 +124,11 @@ namespace NexaTouch
         spdlog::info("NexaTouch interaction key registered after SKSE kInputLoaded. Current scan code={}.", g_config->interactionKeyScanCode);
     }
 
+    bool IsInteractionActive() noexcept
+    {
+        return g_interactionActive;
+    }
+
     void SetInteractionEnabled(bool a_enabled)
     {
         if (!g_config) return;
