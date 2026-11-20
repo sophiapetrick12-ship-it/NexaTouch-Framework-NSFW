@@ -92,7 +92,6 @@ namespace NexaTouch
         clonedRoot->PerformOp(filter);
         if (filter.visibleHandGeometry == 0) {
             spdlog::error("Pet Head hand clone aborted safely: no separately named hand/wrist/forearm geometry was found in the player's live 3D. No substitute mesh was shown.");
-            clonedRoot->DecRefCount();
             return false;
         }
 
