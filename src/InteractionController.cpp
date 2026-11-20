@@ -90,10 +90,11 @@ namespace
 
             const auto skeleton = NexaTouch::InspectHumanoidSkeleton(*actor);
             spdlog::info(
-                "Target skeleton capability probe: coreNodes={}, extendedTouchNodes={} (root={}, head={}, leftHand={}, rightHand={}, leftBreast={}, rightBreast={}, belly={}, butt={}).",
+                "Target skeleton capability probe: coreNodes={}, extendedTouchNodes={} (root={}, head={}, leftHand={}, rightHand={}, leftBreast={}, rightBreast={}, belly={}, leftButt={}, rightButt={}, legacyButt={}, anyButt={}).",
                 skeleton.HasCoreNodes(), skeleton.HasExtendedTouchNodes(), skeleton.hasRoot, skeleton.hasHead,
                 skeleton.hasLeftHand, skeleton.hasRightHand, skeleton.hasLeftBreast, skeleton.hasRightBreast,
-                skeleton.hasBelly, skeleton.hasButt);
+                skeleton.hasBelly, skeleton.hasLeftButt, skeleton.hasRightButt, skeleton.hasLegacyButt,
+                skeleton.HasAnyButtNode());
 
             g_target = actor->GetHandle();
             g_interactionActive = true;
