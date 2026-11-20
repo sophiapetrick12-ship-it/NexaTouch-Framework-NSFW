@@ -155,7 +155,7 @@ namespace NexaTouch
     {
         if (!g_interactionActive || !g_target) return false;
         auto player = RE::PlayerCharacter::GetSingleton();
-        auto reference = RE::TESObjectREFR::LookupByHandle(g_target);
+        auto reference = g_target.get();
         auto target = reference ? reference->As<RE::Actor>() : nullptr;
         if (!player || !target || target->IsDead() || !target->Get3D()) return false;
         const auto skeleton = InspectHumanoidSkeleton(*target);
