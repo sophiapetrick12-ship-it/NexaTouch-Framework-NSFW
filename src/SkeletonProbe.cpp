@@ -31,9 +31,7 @@ namespace NexaTouch
         profile.hasLeftBreast = hasNode("NPC L Breast");
         profile.hasRightBreast = hasNode("NPC R Breast");
         profile.hasBelly = hasNode("NPC Belly");
-        profile.hasLeftButt = hasNode("NPC L Butt");
-        profile.hasRightButt = hasNode("NPC R Butt");
-        profile.hasButt = (profile.hasLeftButt && profile.hasRightButt) || hasNode("NPC Butt");
+        profile.hasButt = hasNode("NPC Butt");
         return profile;
     }
 }

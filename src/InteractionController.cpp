@@ -1,5 +1,6 @@
 #include "InteractionController.h"
 #include "SkeletonProbe.h"
+#include "HandRenderer.h"
 
 #include <RE/Skyrim.h>
 #include <SKSE/SKSE.h>
@@ -135,32 +136,50 @@ namespace NexaTouch
     void SetHeadTouchActive(bool a_active)
     {
         const auto handle = g_target;
-        if (!handle) return;
         const auto tasks = SKSE::GetTaskInterface();
         if (!tasks) {
-            spdlog::error("Head touch test could not be queued: SKSE task interface is unavailable.");
+            spdlog::error("Pet Head operation could not be queued: SKSE task interface is unavailable.");
             return;
         }
+
         tasks->AddTask([handle, a_active]() {
-            auto reference = handle.get();
-            auto actor = reference ? reference->As<RE::Actor>() : nullptr;
-            if (!actor) return;
-            auto faceData = actor->GetFaceGenAnimationData();
-            if (!faceData) {
-                spdlog::warn("Head touch test skipped: target has no face animation data.");
+            if (!a_active) {
+                NexaTouch::DetachPlayerHandFromTarget();
+                if (handle) {
+                    auto reference = handle.get();
+                    auto actor = reference ? reference->As<RE::Actor>() : nullptr;
+                    if (actor) {
+                        if (auto faceData = actor->GetFaceGenAnimationData()) {
+                            RE::BSSpinLockGuard lock(faceData->lock);
+                            faceData->ClearExpressionOverride();
+                            faceData->Reset(0.0F, true, true, true, false);
+                        }
+                    }
+                }
+                spdlog::info("Pet Head ended: cloned hand removed and temporary facial expression cleared.");
                 return;
             }
-            RE::BSSpinLockGuard lock(faceData->lock);
-            if (a_active) {
+
+            auto player = RE::PlayerCharacter::GetSingleton();
+            auto reference = handle.get();
+            auto actor = reference ? reference->As<RE::Actor>() : nullptr;
+            if (!player || !actor || actor == player) {
+                spdlog::warn("Pet Head hand clone skipped: player or target actor handle is invalid.");
+                return;
+            }
+
+            if (!NexaTouch::AttachPlayerHandToTarget(*player, *actor)) {
+                spdlog::warn("Pet Head did not start: the player's actual hand mesh could not be attached safely.");
+                return;
+            }
+
+            if (auto faceData = actor->GetFaceGenAnimationData()) {
+                RE::BSSpinLockGuard lock(faceData->lock);
                 faceData->exprOverride = false;
                 faceData->SetExpressionOverride(10, 0.70F);
                 faceData->exprOverride = true;
-                spdlog::info("Pet Head test activated: target happy facial expression applied. Hand mesh is not part of this test yet.");
-            } else {
-                faceData->ClearExpressionOverride();
-                faceData->Reset(0.0F, true, true, true, false);
-                spdlog::info("Pet Head test ended: target facial expression override cleared.");
             }
+            spdlog::info("Pet Head active: player's cloned 3D hand is attached to the NPC head and the NPC happy reaction is enabled.");
         });
     }
 

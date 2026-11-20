@@ -178,10 +178,11 @@ namespace
             SaveSettings();
         }
 
-        ImGuiMCP::Text("Current test: Pet Head facial reaction.");
-        ImGuiMCP::Text("Aim at an NPC, press the interaction key, then hold left mouse for one second.");
-        ImGuiMCP::Text("The target shows a happy facial reaction while the hold is active.");
-        ImGuiMCP::Text("3D player hand/forearm, body hit-testing and full touch animation are not included in this test.");
+        ImGuiMCP::Text("Current test: Pet Head with a cloned player hand mesh.");
+        ImGuiMCP::Text("Aim at an XPMSSE NPC, start the target session, then hold left mouse for one second.");
+        ImGuiMCP::Text("NexaTouch clones the player 3D scene, keeps hand/wrist/forearm meshes, and attaches them to the NPC head.");
+        ImGuiMCP::Text("If no separate hand geometry is found, the interaction fails closed instead of showing a fake hand.");
+        ImGuiMCP::Text("Surface hit-testing and a dedicated stroking animation are still not included.");
         ImGuiMCP::Text("XPMSSE is the required humanoid skeleton baseline.");
     }
 }

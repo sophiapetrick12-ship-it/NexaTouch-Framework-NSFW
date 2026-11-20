@@ -14,8 +14,6 @@ namespace NexaTouch
         bool hasRightBreast{ false };
         bool hasBelly{ false };
         bool hasButt{ false };
-        bool hasLeftButt{ false };
-        bool hasRightButt{ false };
 
         [[nodiscard]] bool HasCoreNodes() const noexcept;
         [[nodiscard]] bool HasExtendedTouchNodes() const noexcept;
