@@ -1,5 +1,6 @@
 #include "InteractionController.h"
 #include "SkeletonProbe.h"
+#include "HandRenderer.h"
 
 #include <RE/Skyrim.h>
 #include <spdlog/spdlog.h>
@@ -14,32 +15,11 @@ namespace
     bool g_registered{ false };
     bool g_interactionActive{ false };
     bool g_interactionKeyDown{ false };
-    bool g_targetHeldStill{ false };
     RE::ObjectRefHandle g_target;
 
-    // Skyrim SE 1.5.97 relocation IDs used by the game's Actor.SetDontMove implementation.
-    constexpr REL::RelocationID kDontMove{ 36490, 37489 };
-    constexpr REL::RelocationID kStopMoving{ 36802, 37818 };
-
-    void SetActorDontMove(RE::Actor& a_actor, bool a_still)
+    void ReleaseTarget()
     {
-        static const REL::Relocation<void(RE::Actor*, bool)> dontMove{ kDontMove };
-        static const REL::Relocation<void(RE::Actor*)> stopMoving{ kStopMoving };
-        dontMove(&a_actor, a_still);
-        if (a_still) stopMoving(&a_actor);
-    }
-
-    void ReleaseTargetHold()
-    {
-        if (g_targetHeldStill) {
-            const auto target = RE::TESObjectREFR::LookupByHandle(g_target);
-            auto actor = target ? target->As<RE::Actor>() : nullptr;
-            // Only undo the exact still-state NexaTouch applied; do not alter a dead or otherwise changed actor.
-            const auto state = actor && actor->AsActorState() ?
-                static_cast<std::uint32_t>(actor->AsActorState()->GetLifeState()) : 0xFFFFFFFFU;
-            if (actor && state == 9U) SetActorDontMove(*actor, false);
-        }
-        g_targetHeldStill = false;
+        NexaTouch::DetachPlayerHandFromTarget();
         g_target.reset();
     }
 
@@ -92,8 +72,8 @@ namespace
             }
             if (g_interactionActive) {
                 g_interactionActive = false;
-                ReleaseTargetHold();
-                spdlog::info("Interaction mode ended; NexaTouch released its stationary target hold.");
+                ReleaseTarget();
+                spdlog::info("Interaction mode ended; Pet Head hand detached and target session closed.");
                 return;
             }
 
@@ -141,17 +121,12 @@ namespace
             const auto lifeState = actor->AsActorState() ?
                 static_cast<std::uint32_t>(actor->AsActorState()->GetLifeState()) : 0xFFFFFFFFU;
             if (lifeState != 0U) {
-                spdlog::info("Target rejected: actor is not in the ordinary alive state required for a reversible stationary hold (lifeState={}).", lifeState);
+                spdlog::info("Target rejected: actor is not alive (lifeState={}).", lifeState);
                 return;
             }
-
             g_target = actor->GetHandle();
-            SetActorDontMove(*actor, true);
-            g_targetHeldStill = true;
             g_interactionActive = true;
-            spdlog::info("Target session started. FormID={:08X}, distance={:.1f}; Skyrim DontMove + StopMoving applied and will be released on exit.",
-                actor->GetFormID(), distance);
-            spdlog::info("Pet Head zone picking, one-second activation dispatch, animated hand movement and NPC touch reactions remain pending implementation.");
+            spdlog::info("Pet Head session started. FormID={:08X}, distance={:.1f}. Hold left mouse for one second over the head selector.", actor->GetFormID(), distance);
         }
     };
 
@@ -176,6 +151,36 @@ namespace NexaTouch
         spdlog::info("NexaTouch interaction key registered after SKSE kInputLoaded. Current scan code={}.", g_config->interactionKeyScanCode);
     }
 
+    bool BeginPetHead()
+    {
+        if (!g_interactionActive || !g_target) return false;
+        auto player = RE::PlayerCharacter::GetSingleton();
+        auto reference = RE::TESObjectREFR::LookupByHandle(g_target);
+        auto target = reference ? reference->As<RE::Actor>() : nullptr;
+        if (!player || !target || target->IsDead() || !target->Get3D()) return false;
+        const auto skeleton = InspectHumanoidSkeleton(*target);
+        if (!skeleton.hasHead || !skeleton.hasRightHand) {
+            spdlog::warn("Pet Head cancelled: required XPMSSE head/right-hand nodes are unavailable.");
+            return false;
+        }
+        if (!AttachPlayerHandToTarget(*player, *target)) {
+            spdlog::warn("Pet Head cancelled: player's hand could not be attached.");
+            return false;
+        }
+        spdlog::info("Pet Head activated: visible player hand attached to target head.");
+        return true;
+    }
+
+    void UpdatePetHead(float horizontal, float vertical, float stroke) noexcept
+    {
+        UpdatePetHeadHand(horizontal, vertical, stroke);
+    }
+
+    void EndPetHead()
+    {
+        DetachPlayerHandFromTarget();
+    }
+
     bool IsInteractionActive() noexcept
     {
         return g_interactionActive;
@@ -188,7 +193,7 @@ namespace NexaTouch
         if (!a_enabled) {
             g_interactionActive = false;
             g_interactionKeyDown = false;
-            ReleaseTargetHold();
+            ReleaseTarget();
         }
     }
 }

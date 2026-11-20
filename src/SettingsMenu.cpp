@@ -19,11 +19,16 @@ namespace
     SKSEMenuFramework::Model::HudElement* g_interactionHud{ nullptr };
     bool g_holdTracking{ false };
     bool g_holdCompleted{ false };
+    bool g_petHeadActive{ false };
     std::chrono::steady_clock::time_point g_holdStarted{};
 
     void __stdcall RenderInteractionCursor()
     {
         if (!NexaTouch::IsInteractionActive() || SKSEMenuFramework::IsAnyBlockingWindowOpened()) {
+            if (g_petHeadActive) NexaTouch::EndPetHead();
+            g_petHeadActive = false;
+            if (g_petHeadActive) NexaTouch::EndPetHead();
+            g_petHeadActive = false;
             g_holdTracking = false;
             g_holdCompleted = false;
             return;
@@ -45,10 +50,23 @@ namespace
                 g_holdStarted = now;
             }
             const auto elapsed = std::chrono::duration<float>(now - g_holdStarted).count();
-            if (elapsed >= 1.0F) g_holdCompleted = true;
+            if (elapsed >= 1.0F && !g_holdCompleted) { g_petHeadActive = NexaTouch::BeginPetHead(); g_holdCompleted = g_petHeadActive; }
         } else {
+            if (g_petHeadActive) NexaTouch::EndPetHead();
+            g_petHeadActive = false;
             g_holdTracking = false;
             g_holdCompleted = false;
+        }
+
+        if (g_petHeadActive) {
+            auto* io = ImGuiMCP::GetIO();
+            const float width = io && io->DisplaySize.x > 1.0F ? io->DisplaySize.x : 1.0F;
+            const float height = io && io->DisplaySize.y > 1.0F ? io->DisplaySize.y : 1.0F;
+            const float horizontal = (mouse.x / width - 0.5F) * 2.0F;
+            const float vertical = (mouse.y / height - 0.5F) * 2.0F;
+            const float elapsed = std::chrono::duration<float>(now - g_holdStarted).count();
+            const float stroke = 0.5F + 0.5F * std::sin(elapsed * 7.0F);
+            NexaTouch::UpdatePetHead(horizontal, vertical, stroke);
         }
 
         float progress = 0.0F;
@@ -59,6 +77,8 @@ namespace
 
         auto* drawList = ImGuiMCP::GetForegroundDrawList();
         if (!drawList) return;
+
+        ImGuiMCP::ImDrawListManager::AddText(drawList, ImGuiMCP::ImVec2{ mouse.x + 20.0F, mouse.y + 12.0F }, IM_COL32(255, 255, 255, 245), g_petHeadActive ? "Pet Head" : "Pet Head - hold 1s");
 
         constexpr float kCursorRingRadius = 17.0F;
         constexpr float kPi = 3.14159265358979323846F;
@@ -176,9 +196,9 @@ namespace
             SaveSettings();
         }
 
-        ImGuiMCP::Text("Current stage: safe target selection with interaction cursor preview.");
-        ImGuiMCP::Text("The cursor ring follows the mouse; holding left mouse fills it over one second.");
-        ImGuiMCP::Text("Body-zone detection, touch activation, hand model and NPC reactions are not implemented yet.");
+        ImGuiMCP::Text("Pet Head: aim at the NPC head, then hold left mouse for one second.");
+        ImGuiMCP::Text("The player hand follows the cursor across the head contact area while held.");
+        ImGuiMCP::Text("Release left mouse to withdraw the hand; press G to leave the interaction session.");
         ImGuiMCP::Text("XPMSSE is the required humanoid skeleton baseline.");
     }
 }
