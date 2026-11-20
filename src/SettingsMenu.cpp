@@ -107,7 +107,22 @@ namespace
         KeyMap{ ImGuiMCP::ImGuiKey_F11, 0x57 }, KeyMap{ ImGuiMCP::ImGuiKey_F12, 0x58 },
         KeyMap{ ImGuiMCP::ImGuiKey_Space, 0x39 }, KeyMap{ ImGuiMCP::ImGuiKey_Enter, 0x1C },
         KeyMap{ ImGuiMCP::ImGuiKey_Tab, 0x0F }, KeyMap{ ImGuiMCP::ImGuiKey_Backspace, 0x0E },
-        KeyMap{ ImGuiMCP::ImGuiKey_Escape, 0x01 }
+        KeyMap{ ImGuiMCP::ImGuiKey_Escape, 0x01 },
+        KeyMap{ ImGuiMCP::ImGuiKey_Apostrophe, 0x28 }, KeyMap{ ImGuiMCP::ImGuiKey_Comma, 0x33 },
+        KeyMap{ ImGuiMCP::ImGuiKey_Minus, 0x0C }, KeyMap{ ImGuiMCP::ImGuiKey_Period, 0x34 },
+        KeyMap{ ImGuiMCP::ImGuiKey_Slash, 0x35 }, KeyMap{ ImGuiMCP::ImGuiKey_Semicolon, 0x27 },
+        KeyMap{ ImGuiMCP::ImGuiKey_Equal, 0x0D }, KeyMap{ ImGuiMCP::ImGuiKey_LeftBracket, 0x1A },
+        KeyMap{ ImGuiMCP::ImGuiKey_Backslash, 0x2B }, KeyMap{ ImGuiMCP::ImGuiKey_RightBracket, 0x1B },
+        KeyMap{ ImGuiMCP::ImGuiKey_GraveAccent, 0x29 }, KeyMap{ ImGuiMCP::ImGuiKey_CapsLock, 0x3A },
+        KeyMap{ ImGuiMCP::ImGuiKey_NumLock, 0x45 },
+        KeyMap{ ImGuiMCP::ImGuiKey_Keypad0, 0x52 }, KeyMap{ ImGuiMCP::ImGuiKey_Keypad1, 0x4F },
+        KeyMap{ ImGuiMCP::ImGuiKey_Keypad2, 0x50 }, KeyMap{ ImGuiMCP::ImGuiKey_Keypad3, 0x51 },
+        KeyMap{ ImGuiMCP::ImGuiKey_Keypad4, 0x4B }, KeyMap{ ImGuiMCP::ImGuiKey_Keypad5, 0x4C },
+        KeyMap{ ImGuiMCP::ImGuiKey_Keypad6, 0x4D }, KeyMap{ ImGuiMCP::ImGuiKey_Keypad7, 0x47 },
+        KeyMap{ ImGuiMCP::ImGuiKey_Keypad8, 0x48 }, KeyMap{ ImGuiMCP::ImGuiKey_Keypad9, 0x49 },
+        KeyMap{ ImGuiMCP::ImGuiKey_KeypadDecimal, 0x53 }, KeyMap{ ImGuiMCP::ImGuiKey_KeypadDivide, 0xB5 },
+        KeyMap{ ImGuiMCP::ImGuiKey_KeypadMultiply, 0x37 }, KeyMap{ ImGuiMCP::ImGuiKey_KeypadSubtract, 0x4A },
+        KeyMap{ ImGuiMCP::ImGuiKey_KeypadAdd, 0x4E }
     };
 
     ImGuiMCP::ImGuiKey ScanCodeToKey(std::uint32_t scanCode)
