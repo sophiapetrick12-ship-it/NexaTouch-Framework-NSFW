@@ -26,7 +26,7 @@ FetchContent_GetProperties(CommonLibSSE SOURCE_DIR COMMONLIBSSE_SOURCE_DIR)
 include("${COMMONLIBSSE_SOURCE_DIR}/cmake/CommonLibSSE.cmake")
 
 add_commonlibsse_plugin(${PROJECT_NAME}
-    SOURCES src/main.cpp
+    SOURCES src/main.cpp src/Config.cpp
     NAME "NexaTouchFramework"
     AUTHOR "NexaTouch"
     VERSION "${PROJECT_VERSION}"
