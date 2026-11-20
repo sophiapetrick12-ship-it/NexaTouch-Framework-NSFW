@@ -5,11 +5,76 @@
 #include <spdlog/spdlog.h>
 
 #include <cstdint>
+#include <string>
 
 namespace
 {
     constexpr std::uint32_t kGScanCode = 34;
+    constexpr std::uint32_t kF1ScanCode = 59;
     constexpr float kMaximumTargetDistance = 250.0F;
+
+    NexaTouch::Config* g_config{ nullptr };
+    std::filesystem::path g_configPath;
+    bool g_registered{ false };
+    bool g_interactionActive{ false };
+    RE::ObjectRefHandle g_target;
+
+    void OpenSettingsMenu();
+
+    void OnSettingsMenuChoice(std::uint8_t a_choice)
+    {
+        if (!g_config) {
+            return;
+        }
+
+        switch (a_choice) {
+        case 0:
+            g_config->enableInteractions = !g_config->enableInteractions;
+            spdlog::info("F1 menu: G target selection set to {}.", g_config->enableInteractions);
+            break;
+        case 1:
+            g_config->verboseLogging = !g_config->verboseLogging;
+            spdlog::info("F1 menu: verbose logging set to {}.", g_config->verboseLogging);
+            break;
+        default:
+            return;
+        }
+
+        if (!NexaTouch::SaveConfig(*g_config, g_configPath)) {
+            spdlog::error("F1 menu: failed to save NexaTouchFramework.ini.");
+        }
+        OpenSettingsMenu();
+    }
+
+    void OpenSettingsMenu()
+    {
+        if (!g_config) {
+            spdlog::warn("F1 menu requested before configuration was ready.");
+            return;
+        }
+
+        static std::string menuText;
+        menuText =
+            "NexaTouch Framework 0.2\n\n"
+            "Current build: safe NPC target selection only. Hand, touch animations and NPC reactions are not implemented yet.\n\n"
+            "Choose a setting:";
+
+        const auto opened = RE::MessageBoxMenu::Create(
+            menuText.c_str(),
+            &OnSettingsMenuChoice,
+            0,
+            4,
+            10,
+            g_config->enableInteractions ? "Disable G target selection" : "Enable G target selection",
+            g_config->verboseLogging ? "Disable verbose logging" : "Enable verbose logging",
+            "Close");
+
+        if (!opened) {
+            spdlog::error("F1 menu could not be opened by Skyrim's MessageBoxMenu.");
+        } else {
+            spdlog::info("F1 settings menu opened.");
+        }
+    }
 
     class InteractionInputSink final : public RE::BSTEventSink<RE::InputEvent*>
     {
@@ -30,13 +95,20 @@ namespace
                 auto button = event->AsButtonEvent();
                 if (!button ||
                     button->GetDevice() != RE::INPUT_DEVICE::kKeyboard ||
-                    button->GetIDCode() != kGScanCode ||
                     !button->IsDown()) {
                     continue;
                 }
 
-                ToggleInteraction();
-                break;
+                const auto key = button->GetIDCode();
+                if (key == kF1ScanCode) {
+                    OpenSettingsMenu();
+                    break;
+                }
+
+                if (key == kGScanCode) {
+                    ToggleInteraction();
+                    break;
+                }
             }
 
             return RE::BSEventNotifyControl::kContinue;
@@ -45,9 +117,14 @@ namespace
     private:
         void ToggleInteraction()
         {
-            if (active_) {
-                active_ = false;
-                target_.reset();
+            if (!g_config || !g_config->enableInteractions) {
+                spdlog::info("G pressed, but target selection is disabled in NexaTouch settings.");
+                return;
+            }
+
+            if (g_interactionActive) {
+                g_interactionActive = false;
+                g_target.reset();
                 spdlog::info("Interaction mode ended by G.");
                 return;
             }
@@ -82,8 +159,7 @@ namespace
                 return;
             }
 
-            auto root = actor->Get3D();
-            if (!root) {
+            if (!actor->Get3D()) {
                 spdlog::info("G target rejected: actor 3D is not currently loaded.");
                 return;
             }
@@ -102,8 +178,8 @@ namespace
                 skeleton.hasBelly,
                 skeleton.hasButt);
 
-            target_ = actor->GetHandle();
-            active_ = true;
+            g_target = actor->GetHandle();
+            g_interactionActive = true;
 
             spdlog::info(
                 "Interaction mode started. Target formID={:08X}, distance={:.1f}. Target is held as a safe handle; no actor transform or animation data has been changed.",
@@ -111,31 +187,30 @@ namespace
                 distance);
             spdlog::info("Mouse-zone selection and actor positioning are not active in this build stage.");
         }
-
-        bool active_{ false };
-        RE::ObjectRefHandle target_;
     };
 
     InteractionInputSink g_inputSink;
-    bool g_registered{ false };
 }
 
 namespace NexaTouch
 {
-    void InstallInteractionInput()
+    void InstallInteractionInput(Config& a_config, const std::filesystem::path& a_configPath)
     {
+        g_config = &a_config;
+        g_configPath = a_configPath;
+
         if (g_registered) {
             return;
         }
 
         auto inputManager = RE::BSInputDeviceManager::GetSingleton();
         if (!inputManager) {
-            spdlog::error("Unable to register NexaTouch input: BSInputDeviceManager is unavailable.");
+            spdlog::error("Unable to register NexaTouch input after SKSE input-loaded notification: BSInputDeviceManager is still unavailable.");
             return;
         }
 
         inputManager->AddEventSink(&g_inputSink);
         g_registered = true;
-        spdlog::info("NexaTouch input handler registered. G scan code 34 starts/ends safe target selection.");
+        spdlog::info("NexaTouch input handler registered after SKSE kInputLoaded. G scan code 34; F1 scan code 59.");
     }
 }
