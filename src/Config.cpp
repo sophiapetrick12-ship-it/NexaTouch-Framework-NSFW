@@ -54,7 +54,8 @@ namespace NexaTouch
                           "EnableCameraAdjustment=false\n"
                           "EnableAudioReactions=true\n"
                           "RequireXPMSSE=true\n"
-                          "VerboseLogging=false\n";
+                          "VerboseLogging=false\n"
+                          "InteractionKeyScanCode=34\n";
             }
         }
 
@@ -81,7 +82,13 @@ namespace NexaTouch
                 continue;
             }
 
-            if (key == "EnableInteractions") {
+            if (key == "InteractionKeyScanCode") {
+                try {
+                    const auto parsed = std::stoul(Trim(line.substr(separator + 1)));
+                    if (parsed <= 0xFF) config.interactionKeyScanCode = static_cast<std::uint32_t>(parsed);
+                } catch (...) {
+                }
+            } else if (key == "EnableInteractions") {
                 config.enableInteractions = *value;
             } else if (key == "EnableEyeTracking") {
                 config.enableEyeTracking = *value;
@@ -97,5 +104,23 @@ namespace NexaTouch
         }
 
         return config;
+    }
+
+    bool SaveConfig(const Config& a_config, const std::filesystem::path& a_path)
+    {
+        std::error_code error;
+        std::filesystem::create_directories(a_path.parent_path(), error);
+        if (error) return false;
+        std::ofstream output(a_path, std::ios::trunc);
+        if (!output) return false;
+        output << "; NexaTouch Framework configuration\\n"
+               << "EnableInteractions=" << (a_config.enableInteractions ? "true" : "false") << "\\n"
+               << "EnableEyeTracking=" << (a_config.enableEyeTracking ? "true" : "false") << "\\n"
+               << "EnableCameraAdjustment=" << (a_config.enableCameraAdjustment ? "true" : "false") << "\\n"
+               << "EnableAudioReactions=" << (a_config.enableAudioReactions ? "true" : "false") << "\\n"
+               << "RequireXPMSSE=" << (a_config.requireXPMSSE ? "true" : "false") << "\\n"
+               << "VerboseLogging=" << (a_config.verboseLogging ? "true" : "false") << "\\n"
+               << "InteractionKeyScanCode=" << a_config.interactionKeyScanCode << "\\n";
+        return static_cast<bool>(output);
     }
 }
