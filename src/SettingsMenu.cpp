@@ -27,8 +27,6 @@ namespace
         if (!NexaTouch::IsInteractionActive() || SKSEMenuFramework::IsAnyBlockingWindowOpened()) {
             if (g_petHeadActive) NexaTouch::EndPetHead();
             g_petHeadActive = false;
-            if (g_petHeadActive) NexaTouch::EndPetHead();
-            g_petHeadActive = false;
             g_holdTracking = false;
             g_holdCompleted = false;
             return;
@@ -36,6 +34,8 @@ namespace
 
         const auto mouse = ImGuiMCP::GetMousePos();
         if (!std::isfinite(mouse.x) || !std::isfinite(mouse.y) || mouse.x < -1000.0F || mouse.y < -1000.0F) {
+            if (g_petHeadActive) NexaTouch::EndPetHead();
+            g_petHeadActive = false;
             g_holdTracking = false;
             g_holdCompleted = false;
             return;
