@@ -31,3 +31,13 @@ Camera adjustment is optional and must not force a perspective switch. If a supp
 
 ## Compatibility policy
 Skyrim SE 1.5.97.0 is the only enabled runtime. CBBE/3BA, BHUNP, CBPC, Faster HDT-SMP, Improved Camera, and SmoothCam support are targets for separate validation, not blanket compatibility claims.
+
+## Mandatory animal support (Awww-style)
+Animal interactions are a first-class requirement, not a later optional add-on. The framework must support both humanoid NPCs and supported animal actors, following the same user-facing interaction approach as Awww where applicable.
+
+- Build a separate capability/profile layer for humanoid and animal actors; never assume an animal uses a humanoid skeleton, nodes, animation graph, or behavior.
+- Animal support must be designed into target selection, eligibility checks, interaction state, cancellation, and cleanup from the beginning.
+- Each supported animal race/species requires verified skeleton/node discovery and matching animation/behavior resources before its interactions can be enabled.
+- If an animal's rig or animation set is unknown or unsupported, skip that actor safely. Do not force humanoid animations onto it and do not write guessed node offsets.
+- Maintain a compatibility matrix by animal race/species and skeleton/mod setup. Add support incrementally and test each profile independently.
+- Animal interactions should feel native to the framework and follow the same quality/safety standards as NPC interactions; they must not be silently omitted from the final scope.
