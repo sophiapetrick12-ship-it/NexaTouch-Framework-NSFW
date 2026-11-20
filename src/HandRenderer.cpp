@@ -74,18 +74,17 @@ namespace NexaTouch
             return false;
         }
 
-        auto* clonedObject = playerRoot->Clone();
-        auto* clonedRoot = clonedObject ? static_cast<RE::NiAVObject*>(clonedObject) : nullptr;
+        RE::NiPointer<RE::NiAVObject> clonedRoot{
+            static_cast<RE::NiAVObject*>(playerRoot->Clone())
+        };
         if (!clonedRoot || !clonedRoot->AsNode()) {
             spdlog::error("Pet Head hand clone failed: player scene graph could not be cloned as a node.");
-            if (clonedObject) clonedObject->DecRefCount();
             return false;
         }
 
         auto* clonedHandBone = clonedRoot->GetObjectByName(RE::BSFixedString("NPC R Hand [RHnd]"));
         if (!clonedHandBone) {
             spdlog::error("Pet Head hand clone failed: cloned right-hand bone is missing.");
-            clonedRoot->DecRefCount();
             return false;
         }
 
@@ -105,8 +104,8 @@ namespace NexaTouch
         contactOffset.translate = RE::NiPoint3(0.0F, 0.0F, 7.0F);
         clonedRoot->local = contactOffset * handLocal.Invert();
 
-        targetHead->AttachChild(clonedRoot, false);
-        g_handClone.reset(clonedRoot);
+        targetHead->AttachChild(clonedRoot.get(), false);
+        g_handClone = clonedRoot;
         g_handParent.reset(targetHead);
 
         spdlog::info("Pet Head hand clone attached: {} player hand geometry object(s) retained; non-hand player geometry culled.", filter.visibleHandGeometry);
