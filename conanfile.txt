@@ -1,0 +1,11 @@
+[requires]
+commonlibsse-ng/3.5.2
+
+[options]
+commonlibsse-ng/*:with_se=True
+commonlibsse-ng/*:with_ae=False
+commonlibsse-ng/*:with_vr=False
+
+[generators]
+CMakeDeps
+CMakeToolchain
