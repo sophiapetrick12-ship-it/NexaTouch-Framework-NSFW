@@ -70,7 +70,7 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse)
 
     const auto configPath = (error ? std::filesystem::path{} : gameDirectory) /
                             "Data" / "SKSE" / "Plugins" / "NexaTouchFramework.ini";
-    const auto config = NexaTouch::LoadConfig(configPath);
+    auto config = NexaTouch::LoadConfig(configPath);
 
     spdlog::info(
         "Configuration loaded: Interactions={}, EyeTracking={}, CameraAdjustment={}, AudioReactions={}, RequireXPMSSE={}, VerboseLogging={}",
