@@ -14,7 +14,34 @@ namespace
     bool g_registered{ false };
     bool g_interactionActive{ false };
     bool g_interactionKeyDown{ false };
+    bool g_targetHeldStill{ false };
     RE::ObjectRefHandle g_target;
+
+    // Skyrim SE 1.5.97 relocation IDs used by the game's Actor.SetDontMove implementation.
+    constexpr REL::RelocationID kDontMove{ 36490, 37489 };
+    constexpr REL::RelocationID kStopMoving{ 36802, 37818 };
+
+    void SetActorDontMove(RE::Actor& a_actor, bool a_still)
+    {
+        static const REL::Relocation<void(RE::Actor*, bool)> dontMove{ kDontMove };
+        static const REL::Relocation<void(RE::Actor*)> stopMoving{ kStopMoving };
+        dontMove(&a_actor, a_still);
+        if (a_still) stopMoving(&a_actor);
+    }
+
+    void ReleaseTargetHold()
+    {
+        if (g_targetHeldStill) {
+            const auto target = RE::TESObjectREFR::LookupByHandle(g_target);
+            auto actor = target ? target->As<RE::Actor>() : nullptr;
+            // Only undo the exact still-state NexaTouch applied; do not alter a dead or otherwise changed actor.
+            const auto state = actor && actor->AsActorState() ?
+                static_cast<std::uint32_t>(actor->AsActorState()->GetLifeState()) : 0xFFFFFFFFU;
+            if (actor && state == 9U) SetActorDontMove(*actor, false);
+        }
+        g_targetHeldStill = false;
+        g_target.reset();
+    }
 
     class InteractionInputSink final : public RE::BSTEventSink<RE::InputEvent*>
     {
@@ -65,8 +92,8 @@ namespace
             }
             if (g_interactionActive) {
                 g_interactionActive = false;
-                g_target.reset();
-                spdlog::info("Interaction mode ended by configured key.");
+                ReleaseTargetHold();
+                spdlog::info("Interaction mode ended; NexaTouch released its stationary target hold.");
                 return;
             }
 
@@ -88,7 +115,7 @@ namespace
                 spdlog::info("Target rejected: target is not a valid non-player actor.");
                 return;
             }
-            if (actor->IsDead() || actor->IsInCombat()) {
+            if (actor->IsDead() || actor->IsInCombat() || actor->GetCurrentScene()) {
                 spdlog::info("Target rejected: actor is dead or in combat.");
                 return;
             }
@@ -111,11 +138,20 @@ namespace
                 skeleton.hasBelly, skeleton.hasLeftButt, skeleton.hasRightButt, skeleton.hasLegacyButt,
                 skeleton.HasAnyButtNode());
 
+            const auto lifeState = actor->AsActorState() ?
+                static_cast<std::uint32_t>(actor->AsActorState()->GetLifeState()) : 0xFFFFFFFFU;
+            if (lifeState != 0U) {
+                spdlog::info("Target rejected: actor is not in the ordinary alive state required for a reversible stationary hold (lifeState={}).", lifeState);
+                return;
+            }
+
             g_target = actor->GetHandle();
+            SetActorDontMove(*actor, true);
+            g_targetHeldStill = true;
             g_interactionActive = true;
-            spdlog::info("Target session started. FormID={:08X}, distance={:.1f}; safe handle only, no actor transform or animation data changed.",
+            spdlog::info("Target session started. FormID={:08X}, distance={:.1f}; Skyrim DontMove + StopMoving applied and will be released on exit.",
                 actor->GetFormID(), distance);
-            spdlog::info("Interaction cursor ring is active; body-zone selection, actor positioning and hand/touch animation are not implemented in this stage.");
+            spdlog::info("Pet Head zone picking, one-second activation dispatch, animated hand movement and NPC touch reactions remain pending implementation.");
         }
     };
 
@@ -152,7 +188,7 @@ namespace NexaTouch
         if (!a_enabled) {
             g_interactionActive = false;
             g_interactionKeyDown = false;
-            g_target.reset();
+            ReleaseTargetHold();
         }
     }
 }
