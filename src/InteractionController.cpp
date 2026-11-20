@@ -13,6 +13,7 @@ namespace
     std::filesystem::path g_configPath;
     bool g_registered{ false };
     bool g_interactionActive{ false };
+    bool g_interactionKeyDown{ false };
     RE::ObjectRefHandle g_target;
 
     class InteractionInputSink final : public RE::BSTEventSink<RE::InputEvent*>
@@ -27,15 +28,29 @@ namespace
             for (auto event = *a_event; event; event = event->next) {
                 if (event->GetEventType() != RE::INPUT_EVENT_TYPE::kButton) continue;
                 auto button = event->AsButtonEvent();
-                if (!button || button->GetDevice() != RE::INPUT_DEVICE::kKeyboard || !button->IsDown()) continue;
+                if (!button || button->GetDevice() != RE::INPUT_DEVICE::kKeyboard) continue;
 
                 const auto key = button->GetIDCode();
-                if (g_config && g_config->verboseLogging) {
-                    spdlog::debug("NexaTouch keyboard input received: scanCode={}.", key);
-                }
                 if (g_config && key == g_config->interactionKeyScanCode) {
-                    ToggleInteraction();
-                    break;
+                    if (!button->IsDown()) {
+                        g_interactionKeyDown = false;
+                        continue;
+                    }
+
+                    // Consume the configured interaction key before Skyrim's
+                    // normal input handlers can interpret it as Activate/Talk.
+                    if (!g_interactionKeyDown) {
+                        g_interactionKeyDown = true;
+                        if (g_config->verboseLogging) {
+                            spdlog::debug("NexaTouch interaction key captured: scanCode={}.", key);
+                        }
+                        ToggleInteraction();
+                    }
+                    return RE::BSEventNotifyControl::kStop;
+                }
+
+                if (g_config && g_config->verboseLogging && button->IsDown()) {
+                    spdlog::debug("NexaTouch keyboard input received: scanCode={}.", key);
                 }
             }
             return RE::BSEventNotifyControl::kContinue;
@@ -136,6 +151,7 @@ namespace NexaTouch
         g_config->enableInteractions = a_enabled;
         if (!a_enabled) {
             g_interactionActive = false;
+            g_interactionKeyDown = false;
             g_target.reset();
         }
     }
