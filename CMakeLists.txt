@@ -26,7 +26,7 @@ FetchContent_GetProperties(CommonLibSSE SOURCE_DIR COMMONLIBSSE_SOURCE_DIR)
 include("${COMMONLIBSSE_SOURCE_DIR}/cmake/CommonLibSSE.cmake")
 
 add_commonlibsse_plugin(${PROJECT_NAME}
-    SOURCES src/main.cpp src/Config.cpp src/InteractionController.cpp src/SkeletonProbe.cpp
+    SOURCES src/main.cpp src/Config.cpp src/InteractionController.cpp src/SettingsMenu.cpp src/SkeletonProbe.cpp
     NAME "NexaTouchFramework"
     AUTHOR "NexaTouch"
     VERSION "${PROJECT_VERSION}"
@@ -34,6 +34,8 @@ add_commonlibsse_plugin(${PROJECT_NAME}
 
 # CommonLibSSE headers rely on a shared precompiled header of standard-library headers.
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.h)
+
+target_include_directories(${PROJECT_NAME} PRIVATE include)
 
 # Expose the CMake project version to the plugin source as a string literal.
 target_compile_definitions(${PROJECT_NAME} PRIVATE NEXATOUCH_VERSION="${PROJECT_VERSION}")
