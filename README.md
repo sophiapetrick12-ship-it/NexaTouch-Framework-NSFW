@@ -9,7 +9,9 @@ An independent Skyrim Special Edition SKSE plugin project focused on safe, confi
 - Build environment: GitHub Actions (Windows + MSVC)
 
 ## Current status
-The current development stage registers keyboard input after SKSE sends kInputLoaded, avoiding the previous premature BSInputDeviceManager lookup. G performs crosshair target acquisition with actor/alive/combat/range checks and a safe-handle session toggle. F1 opens Skyrim's native MessageBox settings menu, where target selection and verbose logging can be toggled and saved to the INI. A humanoid skeleton capability probe checks core hand/head nodes and extended touch nodes; it does not prove XPMSSE file provenance. This build still does not move or freeze actors, draw a mouse-zone selector, perform touch animations, display the player hand, or provide NPC reactions/physics.
+NexaTouch registers a **Settings** page inside the existing **SKSE Menu Framework** control panel. It does not create a separate F1 or MessageBox menu. The page exposes the target-selection enable toggle, a configurable interaction key (default G), and verbose logging. Settings persist to `Data/SKSE/Plugins/NexaTouchFramework.ini`. The framework's own configured hotkey opens the control panel.
+
+Keyboard input is registered after SKSE sends `kInputLoaded`; the settings page is registered after `kPostLoad` when the framework is available. The current interaction stage performs crosshair target acquisition with actor/alive/combat/range checks and safe-handle session control. It does not move or freeze actors, draw a mouse-zone selector, perform touch animations, display the player hand, or provide NPC reactions/physics.
 
 ## Required interaction scope
 - Humanoid NPC interactions and Awww-style animal interactions are both mandatory parts of the project scope.
