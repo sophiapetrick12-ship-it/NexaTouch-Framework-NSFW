@@ -13,6 +13,9 @@
 
 namespace
 {
+    NexaTouch::Config g_config;
+    std::filesystem::path g_configPath;
+
     void InitializeLogging()
     {
         const auto logDirectory = SKSE::log::log_directory();
@@ -48,6 +51,16 @@ namespace
         spdlog::info("Skyrim SE 1.5.97.0 verified.");
         return true;
     }
+
+    void OnSKSEMessage(SKSE::MessagingInterface::Message* a_message)
+    {
+        if (!a_message || a_message->type != SKSE::MessagingInterface::kInputLoaded) {
+            return;
+        }
+
+        spdlog::info("SKSE kInputLoaded received; registering NexaTouch keyboard input now.");
+        NexaTouch::InstallInteractionInput(g_config, g_configPath);
+    }
 }
 
 SKSEPluginLoad(const SKSE::LoadInterface* skse)
@@ -67,26 +80,28 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse)
         spdlog::error("Unable to resolve the game working directory; configuration will use safe defaults.");
     }
 
-    const auto configPath = (error ? std::filesystem::path{} : gameDirectory) /
-                            "Data" / "SKSE" / "Plugins" / "NexaTouchFramework.ini";
-    const auto config = NexaTouch::LoadConfig(configPath);
+    g_configPath = (error ? std::filesystem::path{} : gameDirectory) /
+                   "Data" / "SKSE" / "Plugins" / "NexaTouchFramework.ini";
+    g_config = NexaTouch::LoadConfig(g_configPath);
 
     spdlog::info(
         "Configuration loaded: Interactions={}, EyeTracking={}, CameraAdjustment={}, AudioReactions={}, RequireXPMSSE={}, VerboseLogging={}",
-        config.enableInteractions,
-        config.enableEyeTracking,
-        config.enableCameraAdjustment,
-        config.enableAudioReactions,
-        config.requireXPMSSE,
-        config.verboseLogging);
+        g_config.enableInteractions,
+        g_config.enableEyeTracking,
+        g_config.enableCameraAdjustment,
+        g_config.enableAudioReactions,
+        g_config.requireXPMSSE,
+        g_config.verboseLogging);
 
-    if (config.enableInteractions) {
-        NexaTouch::InstallInteractionInput();
+    const auto messaging = SKSE::GetMessagingInterface();
+    if (!messaging || !messaging->RegisterListener("SKSE", OnSKSEMessage)) {
+        spdlog::error("Unable to register SKSE messaging listener; input registration and F1 menu will be unavailable.");
     } else {
-        spdlog::info("Interactions are disabled in the INI; input handler was not registered.");
+        spdlog::info("Waiting for SKSE kInputLoaded before registering keyboard input.");
     }
 
     spdlog::info("NexaTouch stage 0.2/0.3 initialized. G target acquisition and safe-handle session control are enabled.");
+    spdlog::info("F1 settings menu is registered with G target-selection and verbose-log toggles.");
     spdlog::info("Humanoid skeleton probe supports core and extended touch-node checks; this is a capability probe, not proof of XPMSSE file provenance.");
     spdlog::info("No actor transforms, skeleton nodes, animation graphs, physics, or camera data are modified.");
     return true;
