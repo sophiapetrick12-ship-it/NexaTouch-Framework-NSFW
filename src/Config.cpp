@@ -99,3 +99,33 @@ namespace NexaTouch
         return config;
     }
 }
+
+
+namespace NexaTouch
+{
+    bool SaveConfig(const Config& a_config, const std::filesystem::path& a_path)
+    {
+        std::error_code error;
+        std::filesystem::create_directories(a_path.parent_path(), error);
+        if (error) {
+            return false;
+        }
+
+        std::ofstream output(a_path, std::ios::trunc);
+        if (!output) {
+            return false;
+        }
+
+        output << "; NexaTouch Framework configuration\n"
+                  "; Settings exposed by the current in-game F1 menu.\n"
+                  "EnableInteractions=" << (a_config.enableInteractions ? "true" : "false") << '\n'
+               << "EnableEyeTracking=" << (a_config.enableEyeTracking ? "true" : "false") << '\n'
+               << "EnableCameraAdjustment=" << (a_config.enableCameraAdjustment ? "true" : "false") << '\n'
+               << "EnableAudioReactions=" << (a_config.enableAudioReactions ? "true" : "false") << '\n'
+               << "RequireXPMSSE=" << (a_config.requireXPMSSE ? "true" : "false") << '\n'
+               << "VerboseLogging=" << (a_config.verboseLogging ? "true" : "false") << '\n';
+
+        output.flush();
+        return output.good();
+    }
+}
