@@ -15,4 +15,5 @@ namespace NexaTouch
     };
 
     [[nodiscard]] Config LoadConfig(const std::filesystem::path& a_path);
+    [[nodiscard]] bool SaveConfig(const Config& a_config, const std::filesystem::path& a_path);
 }
