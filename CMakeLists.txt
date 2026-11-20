@@ -21,14 +21,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(CommonLibSSE)
 
-set(NEXATOUCH_SOURCES
-    src/main.cpp
-)
+# CommonLibSSE-NG defines the plugin helper in this CMake module.
+FetchContent_GetProperties(CommonLibSSE SOURCE_DIR COMMONLIBSSE_SOURCE_DIR)
+include("${COMMONLIBSSE_SOURCE_DIR}/cmake/CommonLibSSE.cmake")
 
 add_commonlibsse_plugin(${PROJECT_NAME}
-    SOURCES ${NEXATOUCH_SOURCES}
+    SOURCES src/main.cpp
+    NAME "NexaTouchFramework"
+    AUTHOR "NexaTouch"
+    VERSION "${PROJECT_VERSION}"
 )
-
-target_link_libraries(${PROJECT_NAME} PRIVATE CommonLibSSE::CommonLibSSE)
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
-target_compile_definitions(${PROJECT_NAME} PRIVATE NEXATOUCH_VERSION="${PROJECT_VERSION}")
