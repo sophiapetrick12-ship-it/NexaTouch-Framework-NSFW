@@ -31,3 +31,9 @@ add_commonlibsse_plugin(${PROJECT_NAME}
     AUTHOR "NexaTouch"
     VERSION "${PROJECT_VERSION}"
 )
+
+# CommonLibSSE headers rely on a shared precompiled header of standard-library headers.
+target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.h)
+
+# Expose the CMake project version to the plugin source as a string literal.
+target_compile_definitions(${PROJECT_NAME} PRIVATE NEXATOUCH_VERSION="${PROJECT_VERSION}")
