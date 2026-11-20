@@ -1,0 +1,14 @@
+/build/
+/out/
+/.vs/
+*.user
+*.suo
+*.pdb
+*.ilk
+*.obj
+*.lib
+*.exp
+*.dll
+*.asi
+*.7z
+*.zip
