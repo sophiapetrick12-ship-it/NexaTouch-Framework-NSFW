@@ -99,7 +99,7 @@ namespace
             g_interactionActive = true;
             spdlog::info("Target session started. FormID={:08X}, distance={:.1f}; safe handle only, no actor transform or animation data changed.",
                 actor->GetFormID(), distance);
-            spdlog::info("Mouse-zone selection, actor positioning and hand/touch animation are not implemented in this stage.");
+            spdlog::info("Interaction cursor ring is active; body-zone selection, actor positioning and hand/touch animation are not implemented in this stage.");
         }
     };
 
