@@ -10,7 +10,10 @@
 inline HMODULE GetMenuFrameworkModule() {
     static HMODULE menuFramework = nullptr;
     if (!menuFramework) {
-        menuFramework = GetModuleHandleW(L"SKSEMenuFramework");
+        menuFramework = GetModuleHandleW(L"SKSEMenuFramework.dll");
+        if (!menuFramework) {
+            menuFramework = GetModuleHandleW(L"SKSEMenuFramework");
+        }
     }
     return menuFramework;
 }
