@@ -2,6 +2,7 @@
 #include "SkeletonProbe.h"
 
 #include <RE/Skyrim.h>
+#include <SKSE/SKSE.h>
 #include <spdlog/spdlog.h>
 
 #include <cstdint>
@@ -49,6 +50,7 @@ namespace
                 return;
             }
             if (g_interactionActive) {
+                NexaTouch::SetHeadTouchActive(false);
                 g_interactionActive = false;
                 g_target.reset();
                 spdlog::info("Interaction mode ended by configured key.");
@@ -94,6 +96,7 @@ namespace
                 skeleton.HasCoreNodes(), skeleton.HasExtendedTouchNodes(), skeleton.hasRoot, skeleton.hasHead,
                 skeleton.hasLeftHand, skeleton.hasRightHand, skeleton.hasLeftBreast, skeleton.hasRightBreast,
                 skeleton.hasBelly, skeleton.hasButt);
+            spdlog::info("XPMSSE butt nodes: left={}, right={}", skeleton.hasLeftButt, skeleton.hasRightButt);
 
             g_target = actor->GetHandle();
             g_interactionActive = true;
@@ -129,11 +132,44 @@ namespace NexaTouch
         return g_interactionActive;
     }
 
+    void SetHeadTouchActive(bool a_active)
+    {
+        const auto handle = g_target;
+        if (!handle) return;
+        const auto tasks = SKSE::GetTaskInterface();
+        if (!tasks) {
+            spdlog::error("Head touch test could not be queued: SKSE task interface is unavailable.");
+            return;
+        }
+        tasks->AddTask([handle, a_active]() {
+            auto reference = handle.get();
+            auto actor = reference ? reference->As<RE::Actor>() : nullptr;
+            if (!actor) return;
+            auto faceData = actor->GetFaceGenAnimationData();
+            if (!faceData) {
+                spdlog::warn("Head touch test skipped: target has no face animation data.");
+                return;
+            }
+            RE::BSSpinLockGuard lock(faceData->lock);
+            if (a_active) {
+                faceData->exprOverride = false;
+                faceData->SetExpressionOverride(10, 0.70F);
+                faceData->exprOverride = true;
+                spdlog::info("Pet Head test activated: target happy facial expression applied. Hand mesh is not part of this test yet.");
+            } else {
+                faceData->ClearExpressionOverride();
+                faceData->Reset(0.0F, true, true, true, false);
+                spdlog::info("Pet Head test ended: target facial expression override cleared.");
+            }
+        });
+    }
+
     void SetInteractionEnabled(bool a_enabled)
     {
         if (!g_config) return;
         g_config->enableInteractions = a_enabled;
         if (!a_enabled) {
+            SetHeadTouchActive(false);
             g_interactionActive = false;
             g_target.reset();
         }

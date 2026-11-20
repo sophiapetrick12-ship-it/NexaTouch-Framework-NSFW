@@ -19,6 +19,7 @@ namespace
     SKSEMenuFramework::Model::HudElement* g_interactionHud{ nullptr };
     bool g_holdTracking{ false };
     bool g_holdCompleted{ false };
+    bool g_headTouchActive{ false };
     std::chrono::steady_clock::time_point g_holdStarted{};
 
     void __stdcall RenderInteractionCursor()
@@ -26,6 +27,10 @@ namespace
         if (!NexaTouch::IsInteractionActive() || SKSEMenuFramework::IsAnyBlockingWindowOpened()) {
             g_holdTracking = false;
             g_holdCompleted = false;
+            if (g_headTouchActive) {
+                g_headTouchActive = false;
+                NexaTouch::SetHeadTouchActive(false);
+            }
             return;
         }
 
@@ -33,6 +38,10 @@ namespace
         if (!std::isfinite(mouse.x) || !std::isfinite(mouse.y) || mouse.x < -1000.0F || mouse.y < -1000.0F) {
             g_holdTracking = false;
             g_holdCompleted = false;
+            if (g_headTouchActive) {
+                g_headTouchActive = false;
+                NexaTouch::SetHeadTouchActive(false);
+            }
             return;
         }
 
@@ -45,10 +54,18 @@ namespace
                 g_holdStarted = now;
             }
             const auto elapsed = std::chrono::duration<float>(now - g_holdStarted).count();
-            if (elapsed >= 1.0F) g_holdCompleted = true;
+            if (elapsed >= 1.0F && !g_holdCompleted) {
+                g_holdCompleted = true;
+                g_headTouchActive = true;
+                NexaTouch::SetHeadTouchActive(true);
+            }
         } else {
             g_holdTracking = false;
             g_holdCompleted = false;
+            if (g_headTouchActive) {
+                g_headTouchActive = false;
+                NexaTouch::SetHeadTouchActive(false);
+            }
         }
 
         float progress = 0.0F;
@@ -161,9 +178,10 @@ namespace
             SaveSettings();
         }
 
-        ImGuiMCP::Text("Current stage: safe target selection with interaction cursor preview.");
-        ImGuiMCP::Text("The cursor ring follows the mouse; holding left mouse fills it over one second.");
-        ImGuiMCP::Text("Body-zone detection, touch activation, hand model and NPC reactions are not implemented yet.");
+        ImGuiMCP::Text("Current test: Pet Head facial reaction.");
+        ImGuiMCP::Text("Aim at an NPC, press the interaction key, then hold left mouse for one second.");
+        ImGuiMCP::Text("The target shows a happy facial reaction while the hold is active.");
+        ImGuiMCP::Text("3D player hand/forearm, body hit-testing and full touch animation are not included in this test.");
         ImGuiMCP::Text("XPMSSE is the required humanoid skeleton baseline.");
     }
 }

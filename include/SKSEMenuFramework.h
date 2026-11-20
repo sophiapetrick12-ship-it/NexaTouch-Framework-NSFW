@@ -11251,9 +11251,14 @@ namespace ImGuiMCPComponents {
         const char* bindingName = *binding == ImGuiMCP::ImGuiKey_None ? "Unbound" : ImGuiMCP::GetKeyName(*binding);
         const char* buttonText = isCapturing ? "Press a key...###KeyBindingPicker" : bindingName;
         const bool captureStarted = ImGuiMCP::Button(buttonText);
+        static bool restoreFrameworkHotkey = false;
+        static bool frameworkHotkeyWasEnabled = false;
 
         if (captureStarted) {
             Detail::activeKeyBindingPicker = pickerID;
+            frameworkHotkeyWasEnabled = SKSEMenuFramework::IsHotkeyEnabled();
+            restoreFrameworkHotkey = true;
+            SKSEMenuFramework::SetHotkeyEnabled(false);
         }
 
         bool changed = false;
@@ -11262,6 +11267,10 @@ namespace ImGuiMCPComponents {
             changed = *binding != ImGuiMCP::ImGuiKey_None;
             *binding = ImGuiMCP::ImGuiKey_None;
             Detail::activeKeyBindingPicker = 0;
+            if (restoreFrameworkHotkey) {
+                SKSEMenuFramework::SetHotkeyEnabled(frameworkHotkeyWasEnabled);
+                restoreFrameworkHotkey = false;
+            }
         }
 
         ImGuiMCP::SameLine();
@@ -11271,10 +11280,18 @@ namespace ImGuiMCPComponents {
             ImGuiMCP::SetNextFrameWantCaptureKeyboard(true);
             if (ImGuiMCP::IsKeyPressed(ImGuiMCP::ImGuiKey_Escape, false)) {
                 Detail::activeKeyBindingPicker = 0;
+                if (restoreFrameworkHotkey) {
+                    SKSEMenuFramework::SetHotkeyEnabled(frameworkHotkeyWasEnabled);
+                    restoreFrameworkHotkey = false;
+                }
             } else if (const auto pressedKey = Detail::FindPressedKey(); pressedKey != ImGuiMCP::ImGuiKey_None) {
                 changed = *binding != pressedKey;
                 *binding = pressedKey;
                 Detail::activeKeyBindingPicker = 0;
+                if (restoreFrameworkHotkey) {
+                    SKSEMenuFramework::SetHotkeyEnabled(frameworkHotkeyWasEnabled);
+                    restoreFrameworkHotkey = false;
+                }
             }
         }
 
