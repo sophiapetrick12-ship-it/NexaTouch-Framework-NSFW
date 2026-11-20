@@ -2,7 +2,7 @@ name: Windows Build
 
 on:
   push:
-    branches: [ main, feature/interaction-cursor-ring-hold, fix/handrenderer-header-foundation ]
+    branches: [ main, feature/interaction-cursor-ring-hold, fix/handrenderer-header-foundation, work/pet-head-fast-ci ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -27,6 +27,17 @@ jobs:
         with:
           vcpkgDirectory: '${{ github.workspace }}/vcpkg'
           vcpkgJsonGlob: 'vcpkg.json'
+
+      # Cache the configured CMake/Ninja tree, including CommonLibSSE object files.
+      # save-always preserves completed compilation objects even if final linking fails.
+      - name: Restore CMake and CommonLibSSE build cache
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: ${{ runner.os }}-msvc-commonlibsse-${{ hashFiles('CMakeLists.txt', 'vcpkg.json') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-msvc-commonlibsse-${{ hashFiles('CMakeLists.txt', 'vcpkg.json') }}-
+            ${{ runner.os }}-msvc-commonlibsse-
 
       - name: Configure CMake
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static-md
