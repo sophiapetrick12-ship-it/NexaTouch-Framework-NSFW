@@ -81,11 +81,10 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse)
         config.requireXPMSSE,
         config.verboseLogging);
 
-    if (config.enableInteractions) {
-        NexaTouch::InstallInteractionInput(config, configPath);
-    } else {
-        spdlog::info("Interactions are disabled in the INI; input handler was not registered.");
-    }
+    // Register the input sink regardless of the initial setting so the in-game menu
+    // can enable interactions without requiring a plugin reload. The handler itself
+    // checks config.enableInteractions before starting a session.
+    NexaTouch::InstallInteractionInput(config, configPath);
 
     NexaTouch::RegisterSettingsMenu(config, configPath);
 

@@ -37,5 +37,6 @@ add_commonlibsse_plugin(${PROJECT_NAME}
     VERSION "${PROJECT_VERSION}"
 )
 
+target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/extern")
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.h)
 target_compile_definitions(${PROJECT_NAME} PRIVATE NEXATOUCH_VERSION="${PROJECT_VERSION}")

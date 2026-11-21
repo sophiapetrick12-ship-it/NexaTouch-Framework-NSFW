@@ -77,18 +77,22 @@ namespace NexaTouch
             }
 
             const auto key = Trim(line.substr(0, separator));
-            const auto value = ParseBool(Trim(line.substr(separator + 1)));
+            const auto rawValue = Trim(line.substr(separator + 1));
+            if (key == "InteractionKeyScanCode") {
+                try {
+                    const auto parsed = std::stoul(rawValue);
+                    if (parsed <= 0xFF) config.interactionKeyScanCode = static_cast<std::uint32_t>(parsed);
+                } catch (...) {
+                }
+                continue;
+            }
+
+            const auto value = ParseBool(rawValue);
             if (!value) {
                 continue;
             }
 
-            if (key == "InteractionKeyScanCode") {
-                try {
-                    const auto parsed = std::stoul(Trim(line.substr(separator + 1)));
-                    if (parsed <= 0xFF) config.interactionKeyScanCode = static_cast<std::uint32_t>(parsed);
-                } catch (...) {
-                }
-            } else if (key == "EnableInteractions") {
+            if (key == "EnableInteractions") {
                 config.enableInteractions = *value;
             } else if (key == "EnableEyeTracking") {
                 config.enableEyeTracking = *value;

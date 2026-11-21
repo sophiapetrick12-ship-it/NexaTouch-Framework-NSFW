@@ -18,6 +18,7 @@ namespace
     bool g_registered{ false };
     SKSEMenuFramework::Model::HudElement* g_interactionHud{ nullptr };
     bool g_holdTracking{ false };
+    bool g_waitingForKey{ false };
     bool g_holdCompleted{ false };
     bool g_petHeadActive{ false };
     std::chrono::steady_clock::time_point g_holdStarted{};
@@ -180,14 +181,23 @@ namespace
             SaveSettings();
         }
 
-        auto selectedKey = ScanCodeToKey(g_config->interactionKeyScanCode);
-        if (ImGuiMCPComponents::KeyBindingPicker("Interaction key", &selectedKey)) {
-            const auto scanCode = KeyToScanCode(selectedKey);
-            if (scanCode != 0) {
-                g_config->interactionKeyScanCode = scanCode;
-                SaveSettings();
+        if (ImGuiMCP::Button(g_waitingForKey ? "Press a key..." : "Change interaction key")) {
+            g_waitingForKey = true;
+        }
+        if (g_waitingForKey) {
+            ImGuiMCP::Text("Press any supported keyboard key to bind it.");
+            for (const auto& entry : kKeyMap) {
+                if (ImGuiMCP::IsKeyPressed(entry.key, false)) {
+                    g_config->interactionKeyScanCode = entry.scanCode;
+                    g_waitingForKey = false;
+                    SaveSettings();
+                    break;
+                }
             }
         }
+        const auto selectedKey = ScanCodeToKey(g_config->interactionKeyScanCode);
+        const auto* keyName = selectedKey != ImGuiMCP::ImGuiKey_None ? ImGuiMCP::GetKeyName(selectedKey) : "Unknown";
+        ImGuiMCP::Text("Current interaction key: %s", keyName ? keyName : "Unknown");
 
         bool verbose = g_config->verboseLogging;
         if (ImGuiMCP::Checkbox("Verbose logging", &verbose)) {
