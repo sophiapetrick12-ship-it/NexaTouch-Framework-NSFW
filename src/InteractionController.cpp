@@ -15,10 +15,45 @@ namespace
     bool g_registered{ false };
     bool g_interactionActive{ false };
     bool g_interactionKeyDown{ false };
+    std::uint32_t g_savedEnabledControls{ 0 };
+    std::uint32_t g_savedStoredControls{ 0 };
+    bool g_controlsStateSaved{ false };
     RE::ObjectRefHandle g_target;
+    void RestorePlayerControls()
+    {
+        if (!g_controlsStateSaved) return;
+        if (auto* controls = RE::ControlMap::GetSingleton()) {
+            controls->SetControlsState(g_savedEnabledControls, g_savedStoredControls);
+            spdlog::info("NexaTouch restored the player's original control-map state.");
+        } else {
+            spdlog::error("NexaTouch could not restore controls: ControlMap is unavailable.");
+        }
+        g_controlsStateSaved = false;
+    }
+
+    void DisableInteractionControls()
+    {
+        auto* controls = RE::ControlMap::GetSingleton();
+        if (!controls) {
+            spdlog::error("NexaTouch cannot safely start: ControlMap is unavailable.");
+            return;
+        }
+        controls->GetControlsState(g_savedEnabledControls, g_savedStoredControls);
+        g_controlsStateSaved = true;
+
+        using Flag = RE::ControlMap::UEFlag;
+        controls->ToggleControls(Flag::kMovement, false, false);
+        controls->ToggleControls(Flag::kFighting, false, false);
+        controls->ToggleControls(Flag::kActivate, false, false);
+        controls->ToggleControls(Flag::kJumping, false, false);
+        controls->ToggleControls(Flag::kSneaking, false, false);
+        spdlog::info("NexaTouch disabled movement, combat, activate, jump and sneak controls; look controls remain enabled.");
+    }
+
     void ReleaseTarget()
     {
         NexaTouch::DetachPlayerHandFromTarget();
+        RestorePlayerControls();
         g_target.reset();
     }
 
@@ -150,8 +185,13 @@ namespace
             g_target = actor->GetHandle();
 
             // Keep Skyrim's camera owned by the player. Never assign the NPC
-            // to PlayerCamera::cameraTarget: doing so makes third-person
-            // tracking follow the NPC and can detach the view from the player.
+            // to PlayerCamera::cameraTarget.
+            DisableInteractionControls();
+            if (!g_controlsStateSaved) {
+                g_target.reset();
+                spdlog::error("NexaTouch session cancelled because player controls could not be safely isolated.");
+                return;
+            }
             g_interactionActive = true;
             spdlog::info("Pet Head session started. FormID={:08X}, distance={:.1f}. Mouse buttons and keyboard actions are captured until G exits.", actor->GetFormID(), distance);
         }
