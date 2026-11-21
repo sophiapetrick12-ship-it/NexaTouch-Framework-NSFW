@@ -1,0 +1,52 @@
+name: Windows Build
+run-name: NexaTouch Windows build (${{ github.ref_name }})
+
+on:
+  push:
+    branches: [ main, work/pet-head-fast-ci ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Set up vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+          vcpkgJsonGlob: 'vcpkg.json'
+
+      - name: Configure CMake
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static-md
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Stage MO2 package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path package/Data/SKSE/Plugins | Out-Null
+          Copy-Item build/NexaTouchFramework.dll package/Data/SKSE/Plugins/NexaTouchFramework.dll
+          Copy-Item Data/SKSE/Plugins/NexaTouchFramework.ini package/Data/SKSE/Plugins/NexaTouchFramework.ini
+          Copy-Item README.md package/README.txt
+
+      - name: Upload MO2 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: NexaTouchFramework-MO2-Windows-x64
+          path: package/
+          if-no-files-found: error
+          retention-days: 14

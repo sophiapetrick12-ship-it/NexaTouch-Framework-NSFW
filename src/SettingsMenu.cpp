@@ -47,9 +47,7 @@ namespace
         const bool onHead = NexaTouch::IsPetHeadCursorTarget();
         if (!onHead) {
             if (g_petHeadActive) NexaTouch::EndPetHead();
-            g_petHeadActive = false;
-            g_holdTracking = false;
-            g_holdCompleted = false;
+            g_petHeadActive = false; g_holdTracking = false; g_holdCompleted = false;
         }
         if (onHead && ImGuiMCP::IsMouseDown(leftButton)) {
             if (!g_holdTracking) {
@@ -59,11 +57,9 @@ namespace
             }
             const auto elapsed = std::chrono::duration<float>(now - g_holdStarted).count();
             if (elapsed >= 1.0F && !g_holdCompleted) { g_petHeadActive = NexaTouch::BeginPetHead(); g_holdCompleted = g_petHeadActive; }
-        } else if (!onHead || !ImGuiMCP::IsMouseDown(leftButton)) {
+        } else {
             if (g_petHeadActive) NexaTouch::EndPetHead();
-            g_petHeadActive = false;
-            g_holdTracking = false;
-            g_holdCompleted = false;
+            g_petHeadActive = false; g_holdTracking = false; g_holdCompleted = false;
         }
 
         if (g_petHeadActive) {

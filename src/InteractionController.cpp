@@ -170,10 +170,7 @@ namespace NexaTouch
         if (!player || !target || target->IsDead() || !target->Get3D()) return false;
         const auto skeleton = InspectHumanoidSkeleton(*target);
         RE::NiPoint3 headContact;
-        if (!IsPetHeadContact(*target, headContact)) {
-            spdlog::warn("Pet Head cancelled: engine crosshair is not contacting this actor's head.");
-            return false;
-        }
+        if (!IsPetHeadContact(*target, headContact)) return false;
         if (!skeleton.hasHead || !skeleton.hasRightHand) {
             spdlog::warn("Pet Head cancelled: required XPMSSE head/right-hand nodes are unavailable.");
             return false;
@@ -186,7 +183,7 @@ namespace NexaTouch
         return true;
     }
 
-    void UpdatePetHead(float, float, float) noexcept
+    void UpdatePetHead(float horizontal, float vertical, float stroke) noexcept
     {
         UpdatePetHeadHand(horizontal, vertical, stroke);
     }
