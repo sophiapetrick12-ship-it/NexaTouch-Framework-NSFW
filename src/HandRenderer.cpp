@@ -90,10 +90,10 @@ bool AttachPlayerHandToTarget(RE::Actor& player,RE::Actor& target){
  head->AttachChild(clone.get(),false);g_handClone=clone;g_handParent.reset(head);g_handTarget=target.GetHandle();g_handAttached=true;
  spdlog::info("Pet Head: attached cloned equipped hand geometry count={}",filter.visibleHandGeometry);return true;
 }
-void UpdatePetHeadHand(float horizontal,float vertical,float stroke) noexcept {
+void UpdatePetHeadHand(float horizontal,float vertical,float stroke,float mouseX,float mouseY,float viewportWidth,float viewportHeight) noexcept {
  if(!g_handAttached||!g_handClone||!g_handParent)return;
  auto reference=g_handTarget.get();auto* actor=reference?reference->As<RE::Actor>():nullptr;if(!actor)return;
- RE::NiPoint3 contact;if(!ReadHeadContact(*actor,0.0F,0.0F,1.0F,1.0F,contact))return;
+ RE::NiPoint3 contact;if(!ReadHeadContact(*actor,mouseX,mouseY,viewportWidth,viewportHeight,contact))return;
  contact.x+=std::clamp(horizontal,-1.0F,1.0F)*4.0F;contact.y+=std::clamp(vertical,-1.0F,1.0F)*2.5F;contact.z+=std::clamp(stroke,0.0F,1.0F)*0.35F;
  PlaceHand(contact);
 }
