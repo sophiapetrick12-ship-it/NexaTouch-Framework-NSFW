@@ -82,7 +82,16 @@ namespace
         auto* drawList = ImGuiMCP::GetForegroundDrawList();
         if (!drawList) return;
 
-        ImGuiMCP::ImDrawListManager::AddText(drawList, ImGuiMCP::ImVec2{ mouse.x + 20.0F, mouse.y + 12.0F }, IM_COL32(255, 255, 255, 245), g_petHeadActive ? "Pet Head" : (onHead ? "Pet Head - hold 1s" : "Aim at NPC head"));
+        // Do not show instructional text or a selector merely because G was
+        // pressed. The label and ring are visible only while the current
+        // head-contact test reports a valid head target.
+        if (!onHead) return;
+
+        ImGuiMCP::ImDrawListManager::AddText(
+            drawList,
+            ImGuiMCP::ImVec2{ mouse.x + 20.0F, mouse.y + 12.0F },
+            IM_COL32(255, 255, 255, 245),
+            g_petHeadActive ? "Pet Head" : "Pet Head - hold 1s");
 
         constexpr float kCursorRingRadius = 17.0F;
         constexpr float kPi = 3.14159265358979323846F;
