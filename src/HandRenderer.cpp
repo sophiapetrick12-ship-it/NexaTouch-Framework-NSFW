@@ -25,7 +25,7 @@ struct HandGeometryFilter {
 };
 bool ReadHeadContact(RE::Actor& target,RE::NiPoint3& local) noexcept {
  auto* pick=RE::CrosshairPickData::GetSingleton();auto* root=target.Get3D();if(!pick||!root)return false;
- auto picked=pick->GetActiveTarget().get();if(picked!=static_cast<RE::TESObjectREFR*>(&target))return false;
+ auto picked=pick->GetActiveTarget().get();if(!picked||picked.get()!=static_cast<RE::TESObjectREFR*>(&target))return false;
  auto* object=root->GetObjectByName(RE::BSFixedString("NPC Head [Head]"));auto* head=object?object->AsNode():nullptr;if(!head)return false;
  const auto& p=pick->collisionPoint;
  if(!std::isfinite(p.x)||!std::isfinite(p.y)||!std::isfinite(p.z)||p.GetDistance(head->world.translate)>24.0F)return false;
