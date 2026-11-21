@@ -14,6 +14,19 @@
 
 namespace
 {
+    // These objects must outlive SKSEPluginLoad: input and menu callbacks keep references.
+    NexaTouch::Config g_config;
+    std::filesystem::path g_configPath;
+
+    void OnSKSEMessage(SKSE::MessagingInterface::Message* a_message)
+    {
+        if (!a_message) return;
+        if (a_message->type == SKSE::MessagingInterface::kInputLoaded) {
+            spdlog::info("SKSE kInputLoaded received; registering NexaTouch keyboard input sink.");
+            NexaTouch::InstallInteractionInput(g_config, g_configPath);
+        }
+    }
+
     void InitializeLogging()
     {
         const auto logDirectory = SKSE::log::log_directory();
@@ -68,9 +81,10 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse)
         spdlog::error("Unable to resolve the game working directory; configuration will use safe defaults.");
     }
 
-    const auto configPath = (error ? std::filesystem::path{} : gameDirectory) /
-                            "Data" / "SKSE" / "Plugins" / "NexaTouchFramework.ini";
-    auto config = NexaTouch::LoadConfig(configPath);
+    g_configPath = (error ? std::filesystem::path{} : gameDirectory) /
+                    "Data" / "SKSE" / "Plugins" / "NexaTouchFramework.ini";
+    g_config = NexaTouch::LoadConfig(g_configPath);
+    auto& config = g_config;
 
     spdlog::info(
         "Configuration loaded: Interactions={}, EyeTracking={}, CameraAdjustment={}, AudioReactions={}, RequireXPMSSE={}, VerboseLogging={}",
@@ -81,12 +95,14 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse)
         config.requireXPMSSE,
         config.verboseLogging);
 
-    // Register the input sink regardless of the initial setting so the in-game menu
-    // can enable interactions without requiring a plugin reload. The handler itself
-    // checks config.enableInteractions before starting a session.
-    NexaTouch::InstallInteractionInput(config, configPath);
+    // Defer the input sink until Skyrim broadcasts kInputLoaded. Registering during
+    // SKSEPluginLoad is too early: BSInputDeviceManager does not exist yet.
+    auto* messaging = SKSE::GetMessagingInterface();
+    if (!messaging || !messaging->RegisterListener(OnSKSEMessage)) {
+        spdlog::error("Failed to register SKSE messaging listener; keyboard input will remain unavailable.");
+    }
 
-    NexaTouch::RegisterSettingsMenu(config, configPath);
+    NexaTouch::RegisterSettingsMenu(config, g_configPath);
 
     spdlog::info("NexaTouch stage 0.2/0.3 initialized. G target acquisition and safe-handle session control are enabled.");
     spdlog::info("Humanoid skeleton probe supports core and extended touch-node checks; this is a capability probe, not proof of XPMSSE file provenance.");
