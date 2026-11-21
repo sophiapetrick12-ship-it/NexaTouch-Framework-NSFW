@@ -65,9 +65,6 @@ namespace
         }
 
         if (g_petHeadActive) {
-            auto* io = ImGuiMCP::GetIO();
-            const float width = io && io->DisplaySize.x > 1.0F ? io->DisplaySize.x : 1.0F;
-            const float height = io && io->DisplaySize.y > 1.0F ? io->DisplaySize.y : 1.0F;
             const float horizontal = (mouse.x / width - 0.5F) * 2.0F;
             const float vertical = (mouse.y / height - 0.5F) * 2.0F;
             const float elapsed = std::chrono::duration<float>(now - g_holdStarted).count();
