@@ -16,27 +16,9 @@ namespace
     bool g_interactionActive{ false };
     bool g_interactionKeyDown{ false };
     RE::ObjectRefHandle g_target;
-    RE::ActorHandle g_previousCameraTarget;
-    RE::ActorHandle g_sessionCameraTarget;
-    bool g_cameraTargetOverridden{ false };
-
-    void RestoreCameraTarget()
-    {
-        if (!g_cameraTargetOverridden) return;
-        if (auto camera = RE::PlayerCamera::GetSingleton();
-            camera && camera->cameraTarget == g_sessionCameraTarget) {
-            camera->cameraTarget = g_previousCameraTarget;
-            spdlog::info("NexaTouch camera target restored.");
-        }
-        g_previousCameraTarget.reset();
-        g_sessionCameraTarget.reset();
-        g_cameraTargetOverridden = false;
-    }
-
     void ReleaseTarget()
     {
         NexaTouch::DetachPlayerHandFromTarget();
-        RestoreCameraTarget();
         g_target.reset();
     }
 
@@ -167,19 +149,9 @@ namespace
             }
             g_target = actor->GetHandle();
 
-            // PlayerCamera exposes an ActorHandle target used by camera systems
-            // (including third-person target tracking). Save and restore it so
-            // this session never leaves the camera bound to the NPC.
-            if (auto camera = RE::PlayerCamera::GetSingleton()) {
-                g_previousCameraTarget = camera->cameraTarget;
-                g_sessionCameraTarget = actor->GetHandle();
-                camera->cameraTarget = g_sessionCameraTarget;
-                g_cameraTargetOverridden = true;
-                spdlog::info("NexaTouch camera target set to selected NPC FormID={:08X}.", actor->GetFormID());
-            } else {
-                spdlog::warn("NexaTouch camera target unavailable; session will continue without camera focus.");
-            }
-
+            // Keep Skyrim's camera owned by the player. Never assign the NPC
+            // to PlayerCamera::cameraTarget: doing so makes third-person
+            // tracking follow the NPC and can detach the view from the player.
             g_interactionActive = true;
             spdlog::info("Pet Head session started. FormID={:08X}, distance={:.1f}. Mouse buttons and keyboard actions are captured until G exits.", actor->GetFormID(), distance);
         }
