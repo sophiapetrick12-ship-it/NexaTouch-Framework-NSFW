@@ -150,17 +150,16 @@ namespace NexaTouch
         g_handTarget = a_target.GetHandle();
         g_handAttached = true;
 
-        UpdatePetHeadHand();
+        UpdatePetHeadHand(0.0F, 0.0F, 0.0F);
         spdlog::info("Pet Head: equipped player hand clone attached ({} visible hand/wrist/forearm geometry objects).",
             filter.visibleHandGeometry);
         return true;
     }
 
-    void UpdatePetHeadHand() noexcept
+    void UpdatePetHeadHand(float a_horizontal, float a_vertical, float a_stroke) noexcept
     {
         if (!g_handAttached || !g_handClone) return;
-        auto targetNode = g_handParent;
-        if (!targetNode) return;
+        if (!g_handParent) return;
 
         // The attached parent is the target's head. Resolve the actor through
         // the live crosshair hit on every update, so the hand follows contact.
@@ -170,6 +169,9 @@ namespace NexaTouch
 
         RE::NiPoint3 localContact;
         if (ReadHeadContact(*actor, localContact)) {
+            localContact.x += std::clamp(a_horizontal, -1.0F, 1.0F) * 4.0F;
+            localContact.y += std::clamp(a_vertical, -1.0F, 1.0F) * 2.5F;
+            localContact.z += std::clamp(a_stroke, 0.0F, 1.0F) * 0.35F;
             PlaceHandAtContact(localContact);
         }
     }

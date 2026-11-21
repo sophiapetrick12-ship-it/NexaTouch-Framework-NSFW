@@ -188,7 +188,7 @@ namespace NexaTouch
 
     void UpdatePetHead(float, float, float) noexcept
     {
-        UpdatePetHeadHand();
+        UpdatePetHeadHand(horizontal, vertical, stroke);
     }
 
     void EndPetHead()
