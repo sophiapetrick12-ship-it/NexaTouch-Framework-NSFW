@@ -35,8 +35,23 @@ namespace
             for (auto event = *a_event; event; event = event->next) {
                 if (event->GetEventType() != RE::INPUT_EVENT_TYPE::kButton) continue;
                 auto button = event->AsButtonEvent();
-                if (!button || button->GetDevice() != RE::INPUT_DEVICE::kKeyboard) continue;
+                if (!button) continue;
 
+                // While a NexaTouch session is active, swallow every physical
+                // mouse button event before vanilla player handlers see it.
+                // This deliberately covers both attack buttons and any remapped
+                // mouse buttons, including their release/held events.
+                if (button->GetDevice() == RE::INPUT_DEVICE::kMouse) {
+                    if (g_interactionActive) {
+                        if (g_config && g_config->verboseLogging && button->IsDown()) {
+                            spdlog::debug("NexaTouch mouse button captured: idCode={}.", button->GetIDCode());
+                        }
+                        return RE::BSEventNotifyControl::kStop;
+                    }
+                    continue;
+                }
+
+                if (button->GetDevice() != RE::INPUT_DEVICE::kKeyboard) continue;
                 const auto key = button->GetIDCode();
                 if (g_config && key == g_config->interactionKeyScanCode) {
                     if (!button->IsDown()) {
