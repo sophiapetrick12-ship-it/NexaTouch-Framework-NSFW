@@ -44,7 +44,14 @@ namespace
 
         constexpr auto leftButton = static_cast<ImGuiMCP::ImGuiMouseButton>(ImGuiMCP::ImGuiMouseButton_Left);
         const auto now = std::chrono::steady_clock::now();
-        if (ImGuiMCP::IsMouseDown(leftButton)) {
+        const bool onHead = NexaTouch::IsPetHeadCursorTarget();
+        if (!onHead) {
+            if (g_petHeadActive) NexaTouch::EndPetHead();
+            g_petHeadActive = false;
+            g_holdTracking = false;
+            g_holdCompleted = false;
+        }
+        if (onHead && ImGuiMCP::IsMouseDown(leftButton)) {
             if (!g_holdTracking) {
                 g_holdTracking = true;
                 g_holdCompleted = false;
@@ -52,7 +59,7 @@ namespace
             }
             const auto elapsed = std::chrono::duration<float>(now - g_holdStarted).count();
             if (elapsed >= 1.0F && !g_holdCompleted) { g_petHeadActive = NexaTouch::BeginPetHead(); g_holdCompleted = g_petHeadActive; }
-        } else {
+        } else if (!onHead || !ImGuiMCP::IsMouseDown(leftButton)) {
             if (g_petHeadActive) NexaTouch::EndPetHead();
             g_petHeadActive = false;
             g_holdTracking = false;
@@ -79,7 +86,7 @@ namespace
         auto* drawList = ImGuiMCP::GetForegroundDrawList();
         if (!drawList) return;
 
-        ImGuiMCP::ImDrawListManager::AddText(drawList, ImGuiMCP::ImVec2{ mouse.x + 20.0F, mouse.y + 12.0F }, IM_COL32(255, 255, 255, 245), g_petHeadActive ? "Pet Head" : "Pet Head - hold 1s");
+        ImGuiMCP::ImDrawListManager::AddText(drawList, ImGuiMCP::ImVec2{ mouse.x + 20.0F, mouse.y + 12.0F }, IM_COL32(255, 255, 255, 245), g_petHeadActive ? "Pet Head" : (onHead ? "Pet Head - hold 1s" : "Aim at NPC head"));
 
         constexpr float kCursorRingRadius = 17.0F;
         constexpr float kPi = 3.14159265358979323846F;
