@@ -44,7 +44,9 @@ namespace
 
         constexpr auto leftButton = static_cast<ImGuiMCP::ImGuiMouseButton>(ImGuiMCP::ImGuiMouseButton_Left);
         const auto now = std::chrono::steady_clock::now();
-        auto* io = ImGuiMCP::GetIO();\n        const float width = io && io->DisplaySize.x > 1.0F ? io->DisplaySize.x : 1.0F;\n        const float height = io && io->DisplaySize.y > 1.0F ? io->DisplaySize.y : 1.0F;\n        const bool onHead = NexaTouch::IsPetHeadCursorTarget(mouse.x, mouse.y, width, height);
+        auto* io = ImGuiMCP::GetIO();
+        const float width = io && io->DisplaySize.x > 1.0F ? io->DisplaySize.x : 1.0F;
+        const float height = io && io->DisplaySize.y > 1.0F ? io->DisplaySize.y : 1.0F;\n        const bool onHead = NexaTouch::IsPetHeadCursorTarget(mouse.x, mouse.y, width, height);
         if (!onHead) {
             if (g_petHeadActive) NexaTouch::EndPetHead();
             g_petHeadActive = false; g_holdTracking = false; g_holdCompleted = false;
