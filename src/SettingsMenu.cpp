@@ -44,7 +44,7 @@ namespace
 
         constexpr auto leftButton = static_cast<ImGuiMCP::ImGuiMouseButton>(ImGuiMCP::ImGuiMouseButton_Left);
         const auto now = std::chrono::steady_clock::now();
-        const bool onHead = NexaTouch::IsPetHeadCursorTarget();
+        auto* io = ImGuiMCP::GetIO();\n        const float width = io && io->DisplaySize.x > 1.0F ? io->DisplaySize.x : 1.0F;\n        const float height = io && io->DisplaySize.y > 1.0F ? io->DisplaySize.y : 1.0F;\n        const bool onHead = NexaTouch::IsPetHeadCursorTarget(mouse.x, mouse.y, width, height);
         if (!onHead) {
             if (g_petHeadActive) NexaTouch::EndPetHead();
             g_petHeadActive = false; g_holdTracking = false; g_holdCompleted = false;
@@ -56,7 +56,7 @@ namespace
                 g_holdStarted = now;
             }
             const auto elapsed = std::chrono::duration<float>(now - g_holdStarted).count();
-            if (elapsed >= 1.0F && !g_holdCompleted) { g_petHeadActive = NexaTouch::BeginPetHead(); g_holdCompleted = g_petHeadActive; }
+            if (elapsed >= 1.0F && !g_holdCompleted) { g_petHeadActive = NexaTouch::BeginPetHead(mouse.x, mouse.y, width, height); g_holdCompleted = g_petHeadActive; }
         } else {
             if (g_petHeadActive) NexaTouch::EndPetHead();
             g_petHeadActive = false; g_holdTracking = false; g_holdCompleted = false;
@@ -70,7 +70,7 @@ namespace
             const float vertical = (mouse.y / height - 0.5F) * 2.0F;
             const float elapsed = std::chrono::duration<float>(now - g_holdStarted).count();
             const float stroke = 0.5F + 0.5F * std::sin(elapsed * 7.0F);
-            NexaTouch::UpdatePetHead(horizontal, vertical, stroke);
+            NexaTouch::UpdatePetHead(horizontal, vertical, stroke, mouse.x, mouse.y, width, height);
         }
 
         float progress = 0.0F;
