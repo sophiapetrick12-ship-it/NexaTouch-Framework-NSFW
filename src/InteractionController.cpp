@@ -228,7 +228,7 @@ namespace NexaTouch
         return IsPetHeadContact(*target, mouseX, mouseY, viewportWidth, viewportHeight, contact);
     }
 
-    bool BeginPetHead()
+    bool BeginPetHead(float mouseX, float mouseY, float viewportWidth, float viewportHeight)
     {
         if (!g_interactionActive || !g_target) return false;
         auto player = RE::PlayerCharacter::GetSingleton();
@@ -237,7 +237,7 @@ namespace NexaTouch
         if (!player || !target || target->IsDead() || !target->Get3D()) return false;
         const auto skeleton = InspectHumanoidSkeleton(*target);
         RE::NiPoint3 headContact;
-        if (!IsPetHeadContact(*target, 0.0F, 0.0F, 1.0F, 1.0F, headContact)) return false;
+        if (!IsPetHeadContact(*target, mouseX, mouseY, viewportWidth, viewportHeight, headContact)) return false;
         if (!skeleton.hasHead || !skeleton.hasRightHand) {
             spdlog::warn("Pet Head cancelled: required XPMSSE head/right-hand nodes are unavailable.");
             return false;
