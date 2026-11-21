@@ -9,7 +9,7 @@ namespace NexaTouch
     void SetInteractionEnabled(bool a_enabled);
     [[nodiscard]] bool IsInteractionActive() noexcept;
     [[nodiscard]] bool IsPetHeadCursorTarget(float a_mouseX, float a_mouseY, float a_viewportWidth, float a_viewportHeight) noexcept;
-    [[nodiscard]] bool BeginPetHead();
+    [[nodiscard]] bool BeginPetHead(float a_mouseX, float a_mouseY, float a_viewportWidth, float a_viewportHeight);
     void UpdatePetHead(float a_horizontal, float a_vertical, float a_stroke, float a_mouseX, float a_mouseY, float a_viewportWidth, float a_viewportHeight) noexcept;
     void EndPetHead();
 }
