@@ -9,7 +9,7 @@ RE::NiPointer<RE::NiAVObject> g_handClone;
 RE::NiPointer<RE::NiNode> g_handParent;
 RE::NiTransform g_handBoneInCloneRoot;
 RE::ObjectRefHandle g_handTarget;
-bool g_handAttached{false};
+bool g_handAttached{false};\nfloat g_cursorX{0.0F},g_cursorY{0.0F},g_viewWidth{1.0F},g_viewHeight{1.0F};
 struct HandGeometryFilter {
  std::uint32_t visibleHandGeometry{0};
  void Visit(RE::NiAVObject* object) {
@@ -23,13 +23,48 @@ struct HandGeometryFilter {
   if(auto* node=object->AsNode()){auto& children=node->GetChildren();for(std::uint16_t i=0;i<children.size();++i)if(children[i])Visit(children[i].get());}
  }
 };
-bool ReadHeadContact(RE::Actor& target,RE::NiPoint3& local) noexcept {
- auto* pick=RE::CrosshairPickData::GetSingleton();auto* root=target.Get3D();if(!pick||!root)return false;
- auto picked=pick->GetActiveTarget().get();if(!picked||picked.get()!=static_cast<RE::TESObjectREFR*>(&target))return false;
- auto* object=root->GetObjectByName(RE::BSFixedString("NPC Head [Head]"));auto* head=object?object->AsNode():nullptr;if(!head)return false;
- const auto& p=pick->collisionPoint;
- if(!std::isfinite(p.x)||!std::isfinite(p.y)||!std::isfinite(p.z)||p.GetDistance(head->world.translate)>24.0F)return false;
- local=head->world.Invert()*p;
+bool ReadHeadContact(RE::Actor& target, float mouseX, float mouseY, float viewportWidth, float viewportHeight, RE::NiPoint3& local) noexcept {
+ auto* root=target.Get3D();
+ auto* playerCamera=RE::PlayerCamera::GetSingleton();
+ if(!root||!playerCamera||!playerCamera->cameraRoot||
+    !std::isfinite(mouseX)||!std::isfinite(mouseY)||
+    !std::isfinite(viewportWidth)||!std::isfinite(viewportHeight)||
+    viewportWidth<2.0F||viewportHeight<2.0F) return false;
+
+ auto* cameraRoot=playerCamera->cameraRoot.get();
+ RE::NiCamera* camera=nullptr;
+ if(cameraRoot) {
+  auto& children=cameraRoot->GetChildren();
+  for(std::uint16_t i=0;i<children.size();++i) {
+   if(children[i]) {
+    camera=RE::skyrim_cast<RE::NiCamera*>(children[i].get());
+    if(camera) break;
+   }
+  }
+ }
+ if(!camera) return false;
+
+ auto* object=root->GetObjectByName(RE::BSFixedString("NPC Head [Head]"));
+ auto* head=object?object->AsNode():nullptr;
+ if(!head||!std::isfinite(head->worldBound.radius)||head->worldBound.radius<=1.0F) return false;
+
+ RE::NiPoint3 rayOrigin,rayDirection;
+ if(!camera->WindowPointToRay(
+      static_cast<std::int32_t>(mouseX),static_cast<std::int32_t>(mouseY),
+      rayOrigin,rayDirection,viewportWidth,viewportHeight)) return false;
+
+ const auto toCenter=head->worldBound.center-rayOrigin;
+ const float along=toCenter.x*rayDirection.x+toCenter.y*rayDirection.y+toCenter.z*rayDirection.z;
+ if(!std::isfinite(along)||along<=0.0F) return false;
+ const auto closest=rayOrigin+rayDirection*along;
+ const float distance=closest.GetDistance(head->worldBound.center);
+ const float radius=head->worldBound.radius;
+ if(!std::isfinite(distance)||distance>radius) return false;
+ const float chord=std::sqrt((std::max)(0.0F,radius*radius-distance*distance));
+ const float hitDistance=along-chord;
+ if(hitDistance<=0.0F) return false;
+ const auto worldContact=rayOrigin+rayDirection*hitDistance;
+ local=head->world.Invert()*worldContact;
  return std::isfinite(local.x)&&std::isfinite(local.y)&&std::isfinite(local.z);
 }
 void PlaceHand(const RE::NiPoint3& point) noexcept {
@@ -39,7 +74,7 @@ void PlaceHand(const RE::NiPoint3& point) noexcept {
 }
 }
 namespace NexaTouch {
-bool IsPetHeadContact(RE::Actor& target,RE::NiPoint3& local) noexcept{return ReadHeadContact(target,local);}
+bool IsPetHeadContact(RE::Actor& target,float mouseX,float mouseY,float viewportWidth,float viewportHeight,RE::NiPoint3& local) noexcept{return ReadHeadContact(target,mouseX,mouseY,viewportWidth,viewportHeight,local);}
 void DetachPlayerHandFromTarget(){
  if(g_handParent&&g_handClone)g_handParent->DetachChild(g_handClone.get());
  g_handClone.reset();g_handParent.reset();g_handTarget.reset();g_handAttached=false;g_handBoneInCloneRoot=RE::NiTransform();
@@ -58,7 +93,7 @@ bool AttachPlayerHandToTarget(RE::Actor& player,RE::Actor& target){
 void UpdatePetHeadHand(float horizontal,float vertical,float stroke) noexcept {
  if(!g_handAttached||!g_handClone||!g_handParent)return;
  auto reference=g_handTarget.get();auto* actor=reference?reference->As<RE::Actor>():nullptr;if(!actor)return;
- RE::NiPoint3 contact;if(!ReadHeadContact(*actor,contact))return;
+ RE::NiPoint3 contact;if(!ReadHeadContact(*actor,0.0F,0.0F,1.0F,1.0F,contact))return;
  contact.x+=std::clamp(horizontal,-1.0F,1.0F)*4.0F;contact.y+=std::clamp(vertical,-1.0F,1.0F)*2.5F;contact.z+=std::clamp(stroke,0.0F,1.0F)*0.35F;
  PlaceHand(contact);
 }
