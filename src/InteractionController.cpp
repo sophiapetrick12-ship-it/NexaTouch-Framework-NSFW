@@ -218,14 +218,14 @@ namespace NexaTouch
         spdlog::info("NexaTouch interaction key registered after SKSE kInputLoaded. Current scan code={}.", g_config->interactionKeyScanCode);
     }
 
-    bool IsPetHeadCursorTarget() noexcept
+    bool IsPetHeadCursorTarget(float mouseX, float mouseY, float viewportWidth, float viewportHeight) noexcept
     {
         if (!g_interactionActive || !g_target) return false;
         auto reference = g_target.get();
         auto target = reference ? reference->As<RE::Actor>() : nullptr;
         if (!target || target->IsDead() || target->IsInCombat()) return false;
         RE::NiPoint3 contact;
-        return IsPetHeadContact(*target, contact);
+        return IsPetHeadContact(*target, mouseX, mouseY, viewportWidth, viewportHeight, contact);
     }
 
     bool BeginPetHead()
@@ -237,7 +237,7 @@ namespace NexaTouch
         if (!player || !target || target->IsDead() || !target->Get3D()) return false;
         const auto skeleton = InspectHumanoidSkeleton(*target);
         RE::NiPoint3 headContact;
-        if (!IsPetHeadContact(*target, headContact)) return false;
+        if (!IsPetHeadContact(*target, 0.0F, 0.0F, 1.0F, 1.0F, headContact)) return false;
         if (!skeleton.hasHead || !skeleton.hasRightHand) {
             spdlog::warn("Pet Head cancelled: required XPMSSE head/right-hand nodes are unavailable.");
             return false;
@@ -250,9 +250,9 @@ namespace NexaTouch
         return true;
     }
 
-    void UpdatePetHead(float horizontal, float vertical, float stroke) noexcept
+    void UpdatePetHead(float horizontal, float vertical, float stroke, float mouseX, float mouseY, float viewportWidth, float viewportHeight) noexcept
     {
-        UpdatePetHeadHand(horizontal, vertical, stroke);
+        UpdatePetHeadHand(horizontal, vertical, stroke, mouseX, mouseY, viewportWidth, viewportHeight);
     }
 
     void EndPetHead()
