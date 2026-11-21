@@ -13,6 +13,7 @@ namespace
     RE::NiPointer<RE::NiNode> g_handParent;
     RE::NiTransform g_handBoneInCloneRoot;
     bool g_handAttached{ false };
+    RE::ObjectRefHandle g_handTarget;
 
     struct HandGeometryFilter
     {
@@ -103,6 +104,7 @@ namespace NexaTouch
         g_handClone.reset();
         g_handParent.reset();
         g_handAttached = false;
+        g_handTarget.reset();
         g_handBoneInCloneRoot = RE::NiTransform();
     }
 
@@ -145,6 +147,7 @@ namespace NexaTouch
         head->AttachChild(clone.get(), false);
         g_handClone = clone;
         g_handParent.reset(head);
+        g_handTarget = a_target.GetHandle();
         g_handAttached = true;
 
         UpdatePetHeadHand();
@@ -161,10 +164,8 @@ namespace NexaTouch
 
         // The attached parent is the target's head. Resolve the actor through
         // the live crosshair hit on every update, so the hand follows contact.
-        auto* pickData = RE::CrosshairPickData::GetSingleton();
-        if (!pickData) return;
-        auto* target = pickData->GetActiveTarget().get();
-        auto* actor = target ? target->As<RE::Actor>() : nullptr;
+        auto targetReference = g_handTarget.get();
+        auto* actor = targetReference ? targetReference->As<RE::Actor>() : nullptr;
         if (!actor) return;
 
         RE::NiPoint3 localContact;
