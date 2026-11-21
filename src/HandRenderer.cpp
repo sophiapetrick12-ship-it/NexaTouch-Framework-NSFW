@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <cstdint>
 #include <string>
 namespace {
 RE::NiPointer<RE::NiAVObject> g_handClone;
@@ -94,7 +95,8 @@ void UpdatePetHeadHand(float horizontal,float vertical,float stroke,float mouseX
  if(!g_handAttached||!g_handClone||!g_handParent)return;
  auto reference=g_handTarget.get();auto* actor=reference?reference->As<RE::Actor>():nullptr;if(!actor)return;
  RE::NiPoint3 contact;if(!ReadHeadContact(*actor,mouseX,mouseY,viewportWidth,viewportHeight,contact))return;
- contact.x+=std::clamp(horizontal,-1.0F,1.0F)*4.0F;contact.y+=std::clamp(vertical,-1.0F,1.0F)*2.5F;contact.z+=std::clamp(stroke,0.0F,1.0F)*0.35F;
+ (void)horizontal; (void)vertical;
+ contact.z+=std::clamp(stroke,0.0F,1.0F)*0.15F;
  PlaceHand(contact);
 }
 }
