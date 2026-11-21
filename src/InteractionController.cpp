@@ -16,10 +16,27 @@ namespace
     bool g_interactionActive{ false };
     bool g_interactionKeyDown{ false };
     RE::ObjectRefHandle g_target;
+    RE::ActorHandle g_previousCameraTarget;
+    RE::ActorHandle g_sessionCameraTarget;
+    bool g_cameraTargetOverridden{ false };
+
+    void RestoreCameraTarget()
+    {
+        if (!g_cameraTargetOverridden) return;
+        if (auto camera = RE::PlayerCamera::GetSingleton();
+            camera && camera->cameraTarget == g_sessionCameraTarget) {
+            camera->cameraTarget = g_previousCameraTarget;
+            spdlog::info("NexaTouch camera target restored.");
+        }
+        g_previousCameraTarget.reset();
+        g_sessionCameraTarget.reset();
+        g_cameraTargetOverridden = false;
+    }
 
     void ReleaseTarget()
     {
         NexaTouch::DetachPlayerHandFromTarget();
+        RestoreCameraTarget();
         g_target.reset();
     }
 
@@ -59,14 +76,23 @@ namespace
                         continue;
                     }
 
-                    // Consume the configured interaction key before Skyrim's
-                    // normal input handlers can interpret it as Activate/Talk.
+                    // G remains the sole keyboard control in an active session.
+                    // It is consumed before Skyrim can interpret it as Activate/Talk.
                     if (!g_interactionKeyDown) {
                         g_interactionKeyDown = true;
                         if (g_config->verboseLogging) {
                             spdlog::debug("NexaTouch interaction key captured: scanCode={}.", key);
                         }
                         ToggleInteraction();
+                    }
+                    return RE::BSEventNotifyControl::kStop;
+                }
+
+                // Suppress movement, weapon switching, spell hotkeys, shouts,
+                // and other vanilla keyboard actions while the session is active.
+                if (g_interactionActive) {
+                    if (g_config && g_config->verboseLogging && button->IsDown()) {
+                        spdlog::debug("NexaTouch keyboard action blocked during session: scanCode={}.", key);
                     }
                     return RE::BSEventNotifyControl::kStop;
                 }
@@ -140,8 +166,22 @@ namespace
                 return;
             }
             g_target = actor->GetHandle();
+
+            // PlayerCamera exposes an ActorHandle target used by camera systems
+            // (including third-person target tracking). Save and restore it so
+            // this session never leaves the camera bound to the NPC.
+            if (auto camera = RE::PlayerCamera::GetSingleton()) {
+                g_previousCameraTarget = camera->cameraTarget;
+                g_sessionCameraTarget = actor->GetHandle();
+                camera->cameraTarget = g_sessionCameraTarget;
+                g_cameraTargetOverridden = true;
+                spdlog::info("NexaTouch camera target set to selected NPC FormID={:08X}.", actor->GetFormID());
+            } else {
+                spdlog::warn("NexaTouch camera target unavailable; session will continue without camera focus.");
+            }
+
             g_interactionActive = true;
-            spdlog::info("Pet Head session started. FormID={:08X}, distance={:.1f}. Hold left mouse for one second over the head selector.", actor->GetFormID(), distance);
+            spdlog::info("Pet Head session started. FormID={:08X}, distance={:.1f}. Mouse buttons and keyboard actions are captured until G exits.", actor->GetFormID(), distance);
         }
     };
 
